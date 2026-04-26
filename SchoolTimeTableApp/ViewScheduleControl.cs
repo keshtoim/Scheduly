@@ -238,6 +238,8 @@ namespace testing
                             cell.Style.ForeColor = Color.DarkRed;
                         }
                     }
+
+
                 }
 
                 // Make class name cells span visually with bold

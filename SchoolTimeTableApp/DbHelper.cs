@@ -5,12 +5,26 @@ using System.Windows.Forms;
 
 namespace testing
 {
+    /// <summary>
+    /// Центральный вспомогательный класс для работы с базой данных.
+    /// Все обращения к SQL Server выполняются через этот класс.
+    /// Строку подключения менять только здесь — она используется во всём приложении.
+    /// </summary>
     public static class DbHelper
     {
+        /// <summary>
+        /// Строка подключения к локальной базе данных SQL Server.
+        /// Для смены БД — измените только эту константу.
+        /// </summary>
         public const string ConnStr =
             "Server=(localdb)\\MSSQLLocalDB;Database=SchoolTimetable0;" +
             "Trusted_Connection=True;TrustServerCertificate=true";
 
+        /// <summary>
+        /// Выполняет SELECT-запрос и возвращает результат в виде DataTable.
+        /// </summary>
+        /// <param name="sql">Текст SQL-запроса.</param>
+        /// <param name="addParams">Лямбда для добавления параметров запроса (можно передать null).</param>
         public static DataTable Query(string sql, Action<SqlParameterCollection> addParams = null)
         {
             using (SqlConnection c = new SqlConnection(ConnStr))
@@ -24,6 +38,10 @@ namespace testing
             }
         }
 
+        /// <summary>
+        /// Выполняет INSERT, UPDATE или DELETE запрос.
+        /// </summary>
+        /// <returns>Количество затронутых строк.</returns>
         public static int Execute(string sql, Action<SqlParameterCollection> addParams = null)
         {
             using (SqlConnection c = new SqlConnection(ConnStr))
@@ -35,7 +53,10 @@ namespace testing
             }
         }
 
-        /// <summary>Returns true if any row matches the query.</summary>
+        /// <summary>
+        /// Проверяет наличие строк по условию запроса.
+        /// </summary>
+        /// <returns>true если найдена хотя бы одна строка.</returns>
         public static bool Exists(string sql, Action<SqlParameterCollection> addParams = null)
         {
             using (SqlConnection c = new SqlConnection(ConnStr))
@@ -48,6 +69,11 @@ namespace testing
             }
         }
 
+        /// <summary>
+        /// Показывает диалоговое окно с описанием ошибки.
+        /// </summary>
+        /// <param name="ex">Исключение.</param>
+        /// <param name="context">Контекст где произошла ошибка (необязательно).</param>
         public static void ShowError(Exception ex, string context = "")
         {
             string msg = string.IsNullOrEmpty(context) ? ex.Message : context + ":\n" + ex.Message;
