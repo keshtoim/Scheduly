@@ -79,16 +79,19 @@ namespace testing
             try
             {
                 DataTable dt = DbHelper.Query(
-                    "SELECT DISTINCT s.subject_id, s.subject_name " +
+                    "SELECT s.subject_id, s.subject_name " +
                     "FROM Subjects s " +
-                    "JOIN Workload w ON w.subject_id = s.subject_id " +
-                    "WHERE w.class_id = @cid " +
+                    "WHERE s.subject_id IN " +
+                    "  (SELECT subject_id FROM Workload WHERE class_id = @cid) " +
                     "ORDER BY s.subject_name",
                     p => p.AddWithValue("@cid", _classId));
 
-                comboSubject.DataSource    = dt;
+                // DisplayMember/ValueMember устанавливаем ДО DataSource —
+                // иначе ComboBox привязывается к данным раньше чем узнаёт
+                // какой столбец отображать, и показывает только первую строку
                 comboSubject.DisplayMember = "subject_name";
                 comboSubject.ValueMember   = "subject_id";
+                comboSubject.DataSource    = dt;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка предметов"); }
         }
@@ -102,11 +105,13 @@ namespace testing
             try
             {
                 DataTable dt = DbHelper.Query(
-                    "SELECT teacher_id, name FROM Teachers ORDER BY name", null);
+                    "SELECT teacher_id, " +
+                    "surname + ' ' + name + ' ' + ISNULL(patronymic, '') AS full_name " +
+                    "FROM Teachers ORDER BY surname, name", null);
 
-                comboTeacher.DataSource    = dt;
-                comboTeacher.DisplayMember = "name";
+                comboTeacher.DisplayMember = "full_name";
                 comboTeacher.ValueMember   = "teacher_id";
+                comboTeacher.DataSource    = dt;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка учителей"); }
         }
@@ -126,9 +131,9 @@ namespace testing
                     "JOIN ClassroomTypes ct ON cr.type_id = ct.type_id " +
                     "ORDER BY cr.room_number", null);
 
-                comboClassroom.DataSource    = dt;
                 comboClassroom.DisplayMember = "display";
                 comboClassroom.ValueMember   = "classroom_id";
+                comboClassroom.DataSource    = dt;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка кабинетов"); }
         }
@@ -274,6 +279,101 @@ namespace testing
                 Close();
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Удаление урока"); }
+        }
+
+        // ── Быстрое добавление учителя ────────────────────────────────────────
+
+        /// <summary>
+        /// Открывает inline-диалог для быстрого добавления нового учителя
+        /// прямо из формы редактирования урока, без перехода в Справочники.
+        /// После добавления автоматически выбирает нового учителя в списке.
+        /// </summary>
+        private void buttonAddTeacher_Click(object sender, EventArgs e)
+        {
+            using (QuickAddForm dlg = new QuickAddForm("Новый учитель",
+                new[] { "Фамилия", "Имя", "Отчество", "Часов в неделю" }))
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+                string surname    = dlg.Values[0].Trim();
+                string firstName  = dlg.Values[1].Trim();
+                string patronymic = dlg.Values[2].Trim();
+                string hours      = dlg.Values[3].Trim();
+
+                if (string.IsNullOrEmpty(surname))
+                {
+                    MessageBox.Show("Введите фамилию учителя.", "Внимание",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                int.TryParse(hours, out int h);
+                string fullName = (surname + " " + firstName + " " + patronymic).Trim();
+
+                try
+                {
+                    DbHelper.Execute(
+                        "INSERT INTO Teachers (surname, name, patronymic, teaching_hours) " +
+                        "VALUES (@s, @n, @p, @h)",
+                        p => {
+                            p.AddWithValue("@s", surname);
+                            p.AddWithValue("@n", firstName);
+                            p.AddWithValue("@p", patronymic);
+                            p.AddWithValue("@h", h);
+                        });
+
+                    // Перезагружаем список и выбираем нового учителя по ФИО
+                    LoadTeachers();
+                    foreach (DataRowView drv in comboTeacher.Items)
+                        if (drv["full_name"].ToString() == fullName)
+                        { comboTeacher.SelectedItem = drv; break; }
+                }
+                catch (Exception ex) { DbHelper.ShowError(ex, "Добавление учителя"); }
+            }
+        }
+
+        // ── Быстрое добавление кабинета ───────────────────────────────────────
+
+        /// <summary>
+        /// Открывает inline-диалог для быстрого добавления нового кабинета
+        /// прямо из формы редактирования урока, без перехода в Справочники.
+        /// После добавления автоматически выбирает новый кабинет в списке.
+        /// </summary>
+        private void buttonAddClassroom_Click(object sender, EventArgs e)
+        {
+            // Загружаем типы кабинетов для выбора
+            DataTable dtTypes = DbHelper.Query(
+                "SELECT type_id, classroom_type FROM ClassroomTypes ORDER BY classroom_type");
+
+            if (dtTypes.Rows.Count == 0)
+            {
+                MessageBox.Show("Сначала добавьте типы кабинетов в Справочниках.",
+                    "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            using (QuickAddClassroomForm dlg = new QuickAddClassroomForm(dtTypes))
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+                try
+                {
+                    DbHelper.Execute(
+                        "INSERT INTO Classrooms (room_number, capacity, type_id) VALUES (@r, @c, @t)",
+                        p => {
+                            p.AddWithValue("@r", dlg.RoomNumber);
+                            p.AddWithValue("@c", dlg.Capacity);
+                            p.AddWithValue("@t", dlg.TypeId);
+                        });
+
+                    // Перезагружаем список и выбираем новый кабинет
+                    LoadClassrooms();
+                    foreach (DataRowView drv in comboClassroom.Items)
+                        if (drv["display"].ToString().StartsWith(dlg.RoomNumber.ToString()))
+                        { comboClassroom.SelectedItem = drv; break; }
+                }
+                catch (Exception ex) { DbHelper.ShowError(ex, "Добавление кабинета"); }
+            }
         }
 
         private void buttonCancel_Click(object sender, EventArgs e)

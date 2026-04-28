@@ -103,7 +103,7 @@ namespace testing
                 DataTable dt = DbHelper.Query(
                     "SELECT s.schedule_id, s.day_of_week, s.lesson_number, s.workload_id, s.classroom_id, " +
                     "w.subject_id, w.teacher_id, " +
-                    "sub.subject_name, t.name AS teacher_name, cr.room_number " +
+                    "sub.subject_name, t.surname + ' ' + t.name + ' ' + t.patronymic AS teacher_name, cr.room_number " +
                     "FROM Schedule s " +
                     "JOIN Workload w   ON s.workload_id  = w.workload_id " +
                     "JOIN Subjects sub ON w.subject_id   = sub.subject_id " +
@@ -307,7 +307,7 @@ namespace testing
                 int scheduleId  = Convert.ToInt32(row["schedule_id"]);
 
                 DataTable teacherConflict = DbHelper.Query(
-                    "SELECT sub.subject_name, t.name AS tname, " +
+                    "SELECT sub.subject_name, t.surname + ' ' + t.name + ' ' + t.patronymic AS tname, " +
                     "CAST(cp.parallel AS NVARCHAR) + lc.letterClass AS class_name " +
                     "FROM Schedule s " +
                     "JOIN Workload w   ON s.workload_id = w.workload_id " +
@@ -329,7 +329,7 @@ namespace testing
                 }
 
                 DataTable roomConflict = DbHelper.Query(
-                    "SELECT sub.subject_name, t.name AS tname, " +
+                    "SELECT sub.subject_name, t.surname + ' ' + t.name + ' ' + t.patronymic AS tname, " +
                     "CAST(cp.parallel AS NVARCHAR) + lc.letterClass AS class_name, " +
                     "CAST(cr2.room_number AS NVARCHAR) AS rnum " +
                     "FROM Schedule s " +
@@ -369,7 +369,7 @@ namespace testing
 
                 DataTable dt = DbHelper.Query(
                     "SELECT s.schedule_id, s.day_of_week, s.lesson_number, s.workload_id, s.classroom_id, " +
-                    "w.subject_id, w.teacher_id, sub.subject_name, t.name AS teacher_name, cr.room_number " +
+                    "w.subject_id, w.teacher_id, sub.subject_name, t.surname + ' ' + t.name + ' ' + t.patronymic AS teacher_name, cr.room_number " +
                     "FROM Schedule s " +
                     "JOIN Workload w   ON s.workload_id  = w.workload_id " +
                     "JOIN Subjects sub ON w.subject_id   = sub.subject_id " +

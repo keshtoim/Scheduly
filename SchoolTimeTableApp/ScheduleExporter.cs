@@ -105,7 +105,7 @@ namespace testing
 
                 DataTable dt = DbHelper.Query(
                     "SELECT s.day_of_week, s.lesson_number, sub.subject_name, " +
-                    "t.name AS teacher_name, cr.room_number " +
+                    "t.surname + ' ' + t.name + ' ' + t.patronymic AS teacher_name, cr.room_number " +
                     "FROM Schedule s " +
                     "JOIN Workload w   ON s.workload_id  = w.workload_id " +
                     "JOIN Subjects sub ON w.subject_id   = sub.subject_id " +
@@ -204,7 +204,7 @@ namespace testing
 
             DataTable dt = DbHelper.Query(
                 "SELECT s.day_of_week, s.lesson_number, sub.subject_name, " +
-                "t.name AS teacher_name, cr.room_number " +
+                "t.surname + ' ' + t.name + ' ' + t.patronymic AS teacher_name, cr.room_number " +
                 "FROM Schedule s " +
                 "JOIN Workload w   ON s.workload_id  = w.workload_id " +
                 "JOIN Subjects sub ON w.subject_id   = sub.subject_id " +

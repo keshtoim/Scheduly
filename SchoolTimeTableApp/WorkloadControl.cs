@@ -39,7 +39,7 @@ namespace testing
                     "SELECT w.workload_id, " +
                     "CAST(cp.parallel AS NVARCHAR) + lc.letterClass AS [Класс], " +
                     "sub.subject_name AS [Предмет], " +
-                    "t.name AS [Учитель], " +
+                    "t.surname + ' ' + t.name + ' ' + t.patronymic AS [Учитель], " +
                     "w.hours_per_week AS [Часов/нед], " +
                     "(SELECT COUNT(*) FROM Schedule s WHERE s.workload_id = w.workload_id) AS [Поставлено уроков] " +
                     "FROM Workload w " +
@@ -84,18 +84,64 @@ namespace testing
                 comboSubject.DisplayMember = "name";
                 comboSubject.ValueMember   = "subject_id";
 
-                // Список учителей
+                // Список учителей с полным ФИО
                 DataTable dtTeacher = DbHelper.Query(
-                    "SELECT teacher_id, name FROM Teachers ORDER BY name");
+                    "SELECT teacher_id, surname + ' ' + name + ' ' + patronymic AS full_name " +
+                    "FROM Teachers ORDER BY surname, name");
                 comboTeacher.DataSource    = dtTeacher;
-                comboTeacher.DisplayMember = "name";
+                comboTeacher.DisplayMember = "full_name";
                 comboTeacher.ValueMember   = "teacher_id";
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка справочников"); }
         }
 
         /// <summary>
-        /// Добавляет новую запись нагрузки.
+        /// Подсвечивает строки таблицы нагрузки содержащие текст поиска.
+        /// </summary>
+        private void textSearch_TextChanged(object sender, EventArgs e)
+        {
+            string query = textSearch.Text.Trim();
+            bool hasQuery = !string.IsNullOrEmpty(query);
+            int found = 0;
+
+            foreach (DataGridViewRow row in dataGrid.Rows)
+            {
+                bool match = false;
+                if (hasQuery)
+                {
+                    foreach (DataGridViewCell cell in row.Cells)
+                    {
+                        if ((cell.Value?.ToString() ?? "")
+                            .IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                        { match = true; break; }
+                    }
+                }
+
+                if (!hasQuery)
+                {
+                    row.DefaultCellStyle.BackColor = System.Drawing.Color.Empty;
+                    row.DefaultCellStyle.ForeColor = System.Drawing.Color.Empty;
+                }
+                else if (match)
+                {
+                    row.DefaultCellStyle.BackColor = System.Drawing.Color.Gold;
+                    row.DefaultCellStyle.ForeColor = System.Drawing.Color.Black;
+                    found++;
+                }
+                else
+                {
+                    row.DefaultCellStyle.BackColor = System.Drawing.Color.Empty;
+                    row.DefaultCellStyle.ForeColor = System.Drawing.Color.LightGray;
+                }
+            }
+
+            labelSearchHint.Text = hasQuery
+                ? (found > 0 ? string.Format("Найдено: {0}", found) : "Не найдено")
+                : "";
+            labelSearchHint.ForeColor = found > 0
+                ? System.Drawing.Color.SeaGreen
+                : System.Drawing.Color.Crimson;
+        }
         /// Проверяет заполненность полей и корректность количества часов.
         /// </summary>
         private void buttonAdd_Click(object sender, EventArgs e)

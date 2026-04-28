@@ -33,8 +33,9 @@ namespace testing
         private void LoadTeachers()
         {
             gridTeachers.DataSource = DbHelper.Query(
-                "SELECT teacher_id, name AS [Имя], teaching_hours AS [Часов] " +
-                "FROM Teachers ORDER BY name");
+                "SELECT teacher_id, surname AS [Фамилия], name AS [Имя], " +
+                "ISNULL(patronymic, '') AS [Отчество], teaching_hours AS [Часов] " +
+                "FROM Teachers ORDER BY surname, name");
 
             if (gridTeachers.Columns.Contains("teacher_id"))
                 gridTeachers.Columns["teacher_id"].Visible = false;
@@ -49,10 +50,16 @@ namespace testing
 
             try
             {
+                // txtTeacherName используется для фамилии,
+                // txtTeacherHours — для часов. Имя и отчество добавляются как пустые —
+                // пользователь может отредактировать их напрямую в таблице позже.
                 DbHelper.Execute(
-                    "INSERT INTO Teachers (name, teaching_hours) VALUES (@n, @h)",
+                    "INSERT INTO Teachers (surname, name, patronymic, teaching_hours) " +
+                    "VALUES (@s, @n, @p, @h)",
                     p => {
-                        p.AddWithValue("@n", txtTeacherName.Text.Trim());
+                        p.AddWithValue("@s", txtTeacherName.Text.Trim());
+                        p.AddWithValue("@n", "");
+                        p.AddWithValue("@p", "");
                         p.AddWithValue("@h", hours);
                     });
 

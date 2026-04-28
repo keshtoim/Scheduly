@@ -12,21 +12,28 @@ namespace testing
         #region Component Designer generated code
         private void InitializeComponent()
         {
-            this.panelFilters = new System.Windows.Forms.Panel();
-            this.labelClass = new System.Windows.Forms.Label();
-            this.comboClass = new System.Windows.Forms.ComboBox();
-            this.labelTeacher = new System.Windows.Forms.Label();
-            this.comboTeacher = new System.Windows.Forms.ComboBox();
-            this.labelDay = new System.Windows.Forms.Label();
-            this.comboDayFilter = new System.Windows.Forms.ComboBox();
+            this.panelFilters      = new System.Windows.Forms.Panel();
+            this.labelClass        = new System.Windows.Forms.Label();
+            this.comboClass        = new System.Windows.Forms.ComboBox();
+            this.labelTeacher      = new System.Windows.Forms.Label();
+            this.comboTeacher      = new System.Windows.Forms.ComboBox();
+            this.labelDay          = new System.Windows.Forms.Label();
+            this.comboDayFilter    = new System.Windows.Forms.ComboBox();
             this.buttonApplyFilter = new System.Windows.Forms.Button();
             this.buttonResetFilter = new System.Windows.Forms.Button();
-            this.buttonExport = new System.Windows.Forms.Button();
-            this.dataGrid = new System.Windows.Forms.DataGridView();
+            this.buttonExport      = new System.Windows.Forms.Button();
+            this.panelSearch       = new System.Windows.Forms.Panel();
+            this.labelSearch       = new System.Windows.Forms.Label();
+            this.textSearch        = new System.Windows.Forms.TextBox();
+            this.labelSearchHint   = new System.Windows.Forms.Label();
+            this.dataGrid          = new System.Windows.Forms.DataGridView();
             this.panelFilters.SuspendLayout();
+            this.panelSearch.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGrid)).BeginInit();
             this.SuspendLayout();
-            // panelFilters
+            // 
+            // panelFilters — верхняя строка фильтров
+            // 
             this.panelFilters.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panelFilters.Controls.Add(this.labelClass);
             this.panelFilters.Controls.Add(this.comboClass);
@@ -112,49 +119,91 @@ namespace testing
             this.buttonExport.Text = "⬇ Экспорт в Excel";
             this.buttonExport.UseVisualStyleBackColor = false;
             this.buttonExport.Click += new System.EventHandler(this.buttonExport_Click);
+            // 
+            // panelSearch — вторая строка с поиском
+            // 
+            this.panelSearch.BackColor = System.Drawing.Color.FromArgb(240, 246, 255);
+            this.panelSearch.Controls.Add(this.labelSearch);
+            this.panelSearch.Controls.Add(this.textSearch);
+            this.panelSearch.Controls.Add(this.labelSearchHint);
+            this.panelSearch.Dock = System.Windows.Forms.DockStyle.Top;
+            this.panelSearch.Location = new System.Drawing.Point(0, 46);
+            this.panelSearch.Name = "panelSearch";
+            this.panelSearch.Size = new System.Drawing.Size(1192, 36);
+            this.panelSearch.TabIndex = 1;
+            // labelSearch
+            this.labelSearch.AutoSize = true;
+            this.labelSearch.Location = new System.Drawing.Point(8, 10);
+            this.labelSearch.Name = "labelSearch";
+            this.labelSearch.TabIndex = 0;
+            this.labelSearch.Text = "🔍 Поиск:";
+            // textSearch
+            this.textSearch.Location = new System.Drawing.Point(72, 7);
+            this.textSearch.Name = "textSearch";
+            this.textSearch.Size = new System.Drawing.Size(400, 20);
+            this.textSearch.TabIndex = 1;
+            this.textSearch.TextChanged += new System.EventHandler(this.textSearch_TextChanged);
+            // labelSearchHint
+            this.labelSearchHint.AutoSize = true;
+            this.labelSearchHint.ForeColor = System.Drawing.Color.SeaGreen;
+            this.labelSearchHint.Location = new System.Drawing.Point(482, 10);
+            this.labelSearchHint.Name = "labelSearchHint";
+            this.labelSearchHint.TabIndex = 2;
+            this.labelSearchHint.Text = "";
+            // 
             // dataGrid
+            // 
             this.dataGrid.AllowUserToAddRows = false;
             this.dataGrid.AllowUserToDeleteRows = false;
             this.dataGrid.AllowUserToResizeRows = false;
             this.dataGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGrid.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dataGrid.Location = new System.Drawing.Point(0, 46);
+            this.dataGrid.Location = new System.Drawing.Point(0, 82);
             this.dataGrid.Name = "dataGrid";
             this.dataGrid.ReadOnly = true;
             this.dataGrid.RowHeadersWidth = 4;
             this.dataGrid.RowHeadersVisible = false;
             this.dataGrid.RowTemplate.Height = 52;
             this.dataGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.dataGrid.Size = new System.Drawing.Size(1192, 638);
-            this.dataGrid.TabIndex = 1;
+            this.dataGrid.Size = new System.Drawing.Size(1192, 602);
+            this.dataGrid.TabIndex = 2;
             this.dataGrid.ColumnHeadersDefaultCellStyle.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.dataGrid.ColumnHeadersDefaultCellStyle.BackColor = System.Drawing.Color.SteelBlue;
             this.dataGrid.ColumnHeadersDefaultCellStyle.ForeColor = System.Drawing.Color.White;
             this.dataGrid.EnableHeadersVisualStyles = false;
+            // 
             // ViewScheduleControl
+            // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.dataGrid);
+            this.Controls.Add(this.panelSearch);
             this.Controls.Add(this.panelFilters);
             this.Name = "ViewScheduleControl";
             this.Size = new System.Drawing.Size(1192, 684);
             this.panelFilters.ResumeLayout(false);
             this.panelFilters.PerformLayout();
+            this.panelSearch.ResumeLayout(false);
+            this.panelSearch.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGrid)).EndInit();
             this.ResumeLayout(false);
         }
         #endregion
 
-        private System.Windows.Forms.Panel panelFilters;
-        private System.Windows.Forms.Label labelClass;
-        private System.Windows.Forms.ComboBox comboClass;
-        private System.Windows.Forms.Label labelTeacher;
-        private System.Windows.Forms.ComboBox comboTeacher;
-        private System.Windows.Forms.Label labelDay;
-        private System.Windows.Forms.ComboBox comboDayFilter;
-        private System.Windows.Forms.Button buttonApplyFilter;
-        private System.Windows.Forms.Button buttonResetFilter;
-        private System.Windows.Forms.Button buttonExport;
+        private System.Windows.Forms.Panel      panelFilters;
+        private System.Windows.Forms.Label      labelClass;
+        private System.Windows.Forms.ComboBox   comboClass;
+        private System.Windows.Forms.Label      labelTeacher;
+        private System.Windows.Forms.ComboBox   comboTeacher;
+        private System.Windows.Forms.Label      labelDay;
+        private System.Windows.Forms.ComboBox   comboDayFilter;
+        private System.Windows.Forms.Button     buttonApplyFilter;
+        private System.Windows.Forms.Button     buttonResetFilter;
+        private System.Windows.Forms.Button     buttonExport;
+        private System.Windows.Forms.Panel      panelSearch;
+        private System.Windows.Forms.Label      labelSearch;
+        private System.Windows.Forms.TextBox    textSearch;
+        private System.Windows.Forms.Label      labelSearchHint;
         private System.Windows.Forms.DataGridView dataGrid;
     }
 }

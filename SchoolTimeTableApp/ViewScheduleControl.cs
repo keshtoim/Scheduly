@@ -35,18 +35,23 @@ namespace testing
                 allClasses["class_id"]   = DBNull.Value;
                 allClasses["class_name"] = "Все классы";
                 dtClass.Rows.InsertAt(allClasses, 0);
-                comboClass.DataSource    = dtClass;
+                // DisplayMember/ValueMember до DataSource
                 comboClass.DisplayMember = "class_name";
                 comboClass.ValueMember   = "class_id";
+                comboClass.DataSource    = dtClass;
 
-                DataTable dtTeacher = DbHelper.Query("SELECT teacher_id, name FROM Teachers ORDER BY name");
+                DataTable dtTeacher = DbHelper.Query(
+                    "SELECT teacher_id, " +
+                    "surname + ' ' + name + ' ' + ISNULL(patronymic, '') AS full_name " +
+                    "FROM Teachers ORDER BY surname, name");
                 DataRow allTeachers = dtTeacher.NewRow();
                 allTeachers["teacher_id"] = DBNull.Value;
-                allTeachers["name"]       = "Все учителя";
+                allTeachers["full_name"]  = "Все учителя"; // правильное имя колонки
                 dtTeacher.Rows.InsertAt(allTeachers, 0);
-                comboTeacher.DataSource    = dtTeacher;
-                comboTeacher.DisplayMember = "name";
+                // DisplayMember/ValueMember до DataSource
+                comboTeacher.DisplayMember = "full_name";
                 comboTeacher.ValueMember   = "teacher_id";
+                comboTeacher.DataSource    = dtTeacher;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка фильтров"); }
         }
@@ -106,7 +111,7 @@ namespace testing
         {
             string sql =
                 "SELECT s.day_of_week, s.lesson_number, sub.subject_name, " +
-                "t.name AS teacher_name, cr.room_number, w.teacher_id " +
+                "t.surname + ' ' + t.name + ' ' + t.patronymic AS teacher_name, cr.room_number, w.teacher_id " +
                 "FROM Schedule s " +
                 "JOIN Workload w   ON s.workload_id  = w.workload_id " +
                 "JOIN Subjects sub ON w.subject_id   = sub.subject_id " +
@@ -208,7 +213,7 @@ namespace testing
                     // Fill data for this class
                     string sql =
                         "SELECT s.day_of_week, s.lesson_number, sub.subject_name, " +
-                        "t.name AS teacher_name, cr.room_number " +
+                        "t.surname + ' ' + t.name + ' ' + t.patronymic AS teacher_name, cr.room_number " +
                         "FROM Schedule s " +
                         "JOIN Workload w   ON s.workload_id  = w.workload_id " +
                         "JOIN Subjects sub ON w.subject_id   = sub.subject_id " +
@@ -296,12 +301,84 @@ namespace testing
             comboClass.SelectedIndex     = 0;
             comboTeacher.SelectedIndex   = 0;
             comboDayFilter.SelectedIndex = 0;
+            textSearch.Clear();
             RebuildGrid();
         }
 
         private void buttonExport_Click(object sender, EventArgs e)
         {
             ExportToExcel();
+        }
+
+        // ── Поиск ────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Подсвечивает ячейки содержащие текст поиска.
+        /// Вызывается при изменении текста в поле поиска.
+        /// </summary>
+        private void textSearch_TextChanged(object sender, EventArgs e)
+        {
+            ApplySearch(textSearch.Text.Trim());
+        }
+
+        /// <summary>
+        /// Проходит по всем ячейкам грида и подсвечивает совпадения жёлтым.
+        /// Если строка поиска пустая — снимает подсветку поиска
+        /// (конфликты при этом сохраняют свой красный цвет).
+        /// </summary>
+        private void ApplySearch(string query)
+        {
+            bool hasQuery = !string.IsNullOrEmpty(query);
+            DataTable conflicts = hasQuery ? GetAllConflicts() : null;
+
+            foreach (DataGridViewRow row in dataGrid.Rows)
+            {
+                foreach (DataGridViewCell cell in row.Cells)
+                {
+                    string val = cell.Value?.ToString() ?? "";
+                    if (!hasQuery)
+                    {
+                        // Сброс — восстанавливаем исходные цвета
+                        // Конфликты определяем по цвету текста
+                        if (cell.Style.ForeColor == Color.DarkRed) continue;
+                        cell.Style.BackColor = Color.Empty;
+                        cell.Style.ForeColor = Color.Empty;
+                    }
+                    else if (val.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        // Совпадение — жёлтая подсветка
+                        // Если ячейка конфликтная — оставляем красный текст
+                        cell.Style.BackColor = Color.Gold;
+                        if (cell.Style.ForeColor != Color.DarkRed)
+                            cell.Style.ForeColor = Color.Black;
+                    }
+                    else
+                    {
+                        // Не совпадает — приглушаем если есть поиск
+                        if (cell.Style.ForeColor == Color.DarkRed) continue;
+                        cell.Style.BackColor = Color.Empty;
+                        cell.Style.ForeColor = Color.LightGray;
+                    }
+                }
+            }
+
+            // Обновляем счётчик совпадений в подсказке
+            if (hasQuery)
+            {
+                int count = 0;
+                foreach (DataGridViewRow row in dataGrid.Rows)
+                    foreach (DataGridViewCell cell in row.Cells)
+                        if ((cell.Value?.ToString() ?? "").IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                            count++;
+                labelSearchHint.Text = count > 0
+                    ? string.Format("Найдено: {0}", count)
+                    : "Не найдено";
+                labelSearchHint.ForeColor = count > 0 ? Color.SeaGreen : Color.Crimson;
+            }
+            else
+            {
+                labelSearchHint.Text = "";
+            }
         }
 
         private void ExportToExcel()

@@ -17,12 +17,15 @@ namespace testing
         /// Для смены БД — измените только эту константу.
         /// </summary>
         public const string ConnStr =
-            "Server=(localdb)\\MSSQLLocalDB;Database=SchoolTimetable0;" +
+            "Server=(localdb)\\MSSQLLocalDB;Database=SchoolTimetable;" +
             "Trusted_Connection=True;TrustServerCertificate=true";
 
         /// <summary>
-        /// Выполняет SELECT-запрос и возвращает результат в виде DataTable.
+        /// SQL-выражение для получения полного ФИО учителя.
+        /// Используется во всех запросах где нужно имя учителя.
         /// </summary>
+        public const string TeacherFullName =
+            "t.surname + ' ' + t.name + ' ' + ISNULL(t.patronymic, '') AS teacher_name";
         /// <param name="sql">Текст SQL-запроса.</param>
         /// <param name="addParams">Лямбда для добавления параметров запроса (можно передать null).</param>
         public static DataTable Query(string sql, Action<SqlParameterCollection> addParams = null)
