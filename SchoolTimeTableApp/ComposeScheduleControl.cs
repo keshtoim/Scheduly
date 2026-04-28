@@ -171,6 +171,8 @@ namespace testing
                     "SELECT DISTINCT s1.day_of_week, s1.lesson_number, " +
                     "sub1.subject_name AS subj1, " +
                     "t1.surname + ' ' + t1.name + ' ' + ISNULL(t1.patronymic,'') AS teach1, " +
+                    "sub2.subject_name AS subj2, " +
+                    "t2.surname + ' ' + t2.name + ' ' + ISNULL(t2.patronymic,'') AS teach2, " +
                     "CASE WHEN w1.teacher_id = w2.teacher_id THEN 'учитель' ELSE 'кабинет' END AS conflict_type, " +
                     "CAST(cp2.parallel AS NVARCHAR) + lc2.letterClass AS other_class " +
                     "FROM Schedule s1 " +
@@ -181,6 +183,8 @@ namespace testing
                     "  AND s1.lesson_number = s2.lesson_number " +
                     "  AND s1.schedule_id  <> s2.schedule_id " +
                     "JOIN Workload w2   ON s2.workload_id = w2.workload_id " +
+                    "JOIN Subjects sub2 ON w2.subject_id  = sub2.subject_id " +
+                    "JOIN Teachers t2   ON w2.teacher_id  = t2.teacher_id " +
                     "JOIN Classes cl2   ON w2.class_id    = cl2.class_id " +
                     "JOIN ClassParallel cp2    ON cl2.id_parallel_class = cp2.id_parallel_class " +
                     "JOIN LetterOfTheClass lc2 ON cl2.id_letter_class   = lc2.id_letter_class " +
@@ -203,14 +207,18 @@ namespace testing
 
                 foreach (DataRow row in dt.Rows)
                 {
-                    // Format: "Понедельник, ур.1 — учитель: Нечаева О.С. (9А)"
-                    listBoxWarnings.Items.Add(string.Format(
-                        "{0}, ур.{1} — {2}: {3} ({4})",
-                        DayNames[Convert.ToInt32(row["day_of_week"])],
-                        row["lesson_number"],
-                        row["conflict_type"],
-                        row["teach1"],
-                        row["other_class"]));
+                    string conflictType = row["conflict_type"].ToString();
+                    string day    = DayNames[Convert.ToInt32(row["day_of_week"])];
+                    string lesson = row["lesson_number"].ToString();
+                    string teach1 = row["teach1"].ToString().Trim();
+                    string teach2 = row["teach2"].ToString().Trim();
+                    string cls2   = row["other_class"].ToString();
+
+                    string msg = conflictType == "учитель"
+                        ? string.Format("{0}, ур.{1} — {2} занят в {3}", day, lesson, teach1, cls2)
+                        : string.Format("{0}, ур.{1} — кабинет занят ({2}, {3})", day, lesson, teach2, cls2);
+
+                    listBoxWarnings.Items.Add(msg);
                 }
             }
             catch (Exception ex)

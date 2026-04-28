@@ -104,13 +104,13 @@ namespace testing
         {
             try
             {
-                // Показываем только учителей которые есть в нагрузке данного класса
+                // DISTINCT + ORDER BY требует чтобы поля сортировки были в SELECT
                 DataTable dt = DbHelper.Query(
-                    "SELECT DISTINCT t.teacher_id, " +
+                    "SELECT t.teacher_id, " +
                     "t.surname + ' ' + t.name + ' ' + ISNULL(t.patronymic, '') AS full_name " +
                     "FROM Teachers t " +
-                    "JOIN Workload w ON w.teacher_id = t.teacher_id " +
-                    "WHERE w.class_id = @cid " +
+                    "WHERE t.teacher_id IN " +
+                    "  (SELECT DISTINCT w.teacher_id FROM Workload w WHERE w.class_id = @cid) " +
                     "ORDER BY t.surname, t.name",
                     p => p.AddWithValue("@cid", _classId));
 
