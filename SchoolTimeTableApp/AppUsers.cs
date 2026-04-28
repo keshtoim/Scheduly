@@ -15,7 +15,7 @@ namespace testing
     {
         /// <summary>Логин для входа.</summary>
         public string Login       { get; set; }
-        /// <summary>Пароль (хранится в открытом виде — только для учебного проекта).</summary>
+        /// <summary>Пароль.</summary>
         public string Password    { get; set; }
         /// <summary>Роль пользователя.</summary>
         public UserRole Role      { get; set; }

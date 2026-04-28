@@ -318,7 +318,20 @@ namespace testing
         /// </summary>
         private void textSearch_TextChanged(object sender, EventArgs e)
         {
+            // Если поле очищено — сразу сбрасываем подсветку
+            if (string.IsNullOrEmpty(textSearch.Text))
+                ApplySearch("");
+        }
+
+        private void buttonSearch_Click(object sender, EventArgs e)
+        {
             ApplySearch(textSearch.Text.Trim());
+        }
+
+        private void textSearch_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            if (e.KeyCode == System.Windows.Forms.Keys.Enter)
+                ApplySearch(textSearch.Text.Trim());
         }
 
         /// <summary>
@@ -329,56 +342,49 @@ namespace testing
         private void ApplySearch(string query)
         {
             bool hasQuery = !string.IsNullOrEmpty(query);
-            DataTable conflicts = hasQuery ? GetAllConflicts() : null;
 
+            // Шаг 1 — сбрасываем ВСЕ ячейки кроме конфликтных (без исключений по пустым)
             foreach (DataGridViewRow row in dataGrid.Rows)
-            {
                 foreach (DataGridViewCell cell in row.Cells)
                 {
+                    if (cell.Style.ForeColor == Color.DarkRed) continue;
+                    cell.Style.BackColor = Color.Empty;
+                    cell.Style.ForeColor = Color.Empty;
+                }
+
+            if (!hasQuery)
+            {
+                labelSearchHint.Text = "";
+                return;
+            }
+
+            // Шаг 2 — применяем новую подсветку
+            int count = 0;
+            foreach (DataGridViewRow row in dataGrid.Rows)
+                foreach (DataGridViewCell cell in row.Cells)
+                {
+                    string colName = dataGrid.Columns[cell.ColumnIndex].Name;
+                    if (colName == "class_name" || colName == "lesson") continue;
+
                     string val = cell.Value?.ToString() ?? "";
-                    if (!hasQuery)
+                    if (string.IsNullOrWhiteSpace(val) || val == "+") continue;
+
+                    bool isConflict = cell.Style.ForeColor == Color.DarkRed;
+
+                    if (val.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // Сброс — восстанавливаем исходные цвета
-                        // Конфликты определяем по цвету текста
-                        if (cell.Style.ForeColor == Color.DarkRed) continue;
-                        cell.Style.BackColor = Color.Empty;
-                        cell.Style.ForeColor = Color.Empty;
-                    }
-                    else if (val.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        // Совпадение — жёлтая подсветка
-                        // Если ячейка конфликтная — оставляем красный текст
                         cell.Style.BackColor = Color.Gold;
-                        if (cell.Style.ForeColor != Color.DarkRed)
-                            cell.Style.ForeColor = Color.Black;
+                        if (!isConflict) cell.Style.ForeColor = Color.Black;
+                        count++;
                     }
                     else
                     {
-                        // Не совпадает — приглушаем если есть поиск
-                        if (cell.Style.ForeColor == Color.DarkRed) continue;
-                        cell.Style.BackColor = Color.Empty;
-                        cell.Style.ForeColor = Color.LightGray;
+                        if (!isConflict) cell.Style.ForeColor = Color.LightGray;
                     }
                 }
-            }
 
-            // Обновляем счётчик совпадений в подсказке
-            if (hasQuery)
-            {
-                int count = 0;
-                foreach (DataGridViewRow row in dataGrid.Rows)
-                    foreach (DataGridViewCell cell in row.Cells)
-                        if ((cell.Value?.ToString() ?? "").IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
-                            count++;
-                labelSearchHint.Text = count > 0
-                    ? string.Format("Найдено: {0}", count)
-                    : "Не найдено";
-                labelSearchHint.ForeColor = count > 0 ? Color.SeaGreen : Color.Crimson;
-            }
-            else
-            {
-                labelSearchHint.Text = "";
-            }
+            labelSearchHint.Text      = count > 0 ? string.Format("Найдено: {0}", count) : "Не найдено";
+            labelSearchHint.ForeColor = count > 0 ? Color.SeaGreen : Color.Crimson;
         }
 
         private void ExportToExcel()

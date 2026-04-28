@@ -25,6 +25,7 @@ namespace testing
             this.panelSearch       = new System.Windows.Forms.Panel();
             this.labelSearch       = new System.Windows.Forms.Label();
             this.textSearch        = new System.Windows.Forms.TextBox();
+            this.buttonSearch      = new System.Windows.Forms.Button();
             this.labelSearchHint   = new System.Windows.Forms.Label();
             this.dataGrid          = new System.Windows.Forms.DataGridView();
             this.panelFilters.SuspendLayout();
@@ -125,6 +126,7 @@ namespace testing
             this.panelSearch.BackColor = System.Drawing.Color.FromArgb(240, 246, 255);
             this.panelSearch.Controls.Add(this.labelSearch);
             this.panelSearch.Controls.Add(this.textSearch);
+            this.panelSearch.Controls.Add(this.buttonSearch);
             this.panelSearch.Controls.Add(this.labelSearchHint);
             this.panelSearch.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelSearch.Location = new System.Drawing.Point(0, 46);
@@ -140,15 +142,27 @@ namespace testing
             // textSearch
             this.textSearch.Location = new System.Drawing.Point(72, 7);
             this.textSearch.Name = "textSearch";
-            this.textSearch.Size = new System.Drawing.Size(400, 20);
+            this.textSearch.Size = new System.Drawing.Size(340, 20);
             this.textSearch.TabIndex = 1;
             this.textSearch.TextChanged += new System.EventHandler(this.textSearch_TextChanged);
+            this.textSearch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textSearch_KeyDown);
+            // buttonSearch
+            this.buttonSearch.BackColor = System.Drawing.Color.SteelBlue;
+            this.buttonSearch.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonSearch.ForeColor = System.Drawing.Color.White;
+            this.buttonSearch.Location  = new System.Drawing.Point(420, 5);
+            this.buttonSearch.Name      = "buttonSearch";
+            this.buttonSearch.Size      = new System.Drawing.Size(80, 24);
+            this.buttonSearch.TabIndex  = 2;
+            this.buttonSearch.Text      = "Найти";
+            this.buttonSearch.UseVisualStyleBackColor = false;
+            this.buttonSearch.Click += new System.EventHandler(this.buttonSearch_Click);
             // labelSearchHint
             this.labelSearchHint.AutoSize = true;
             this.labelSearchHint.ForeColor = System.Drawing.Color.SeaGreen;
-            this.labelSearchHint.Location = new System.Drawing.Point(482, 10);
+            this.labelSearchHint.Location = new System.Drawing.Point(510, 10);
             this.labelSearchHint.Name = "labelSearchHint";
-            this.labelSearchHint.TabIndex = 2;
+            this.labelSearchHint.TabIndex = 3;
             this.labelSearchHint.Text = "";
             // 
             // dataGrid
@@ -203,6 +217,7 @@ namespace testing
         private System.Windows.Forms.Panel      panelSearch;
         private System.Windows.Forms.Label      labelSearch;
         private System.Windows.Forms.TextBox    textSearch;
+        private System.Windows.Forms.Button     buttonSearch;
         private System.Windows.Forms.Label      labelSearchHint;
         private System.Windows.Forms.DataGridView dataGrid;
     }

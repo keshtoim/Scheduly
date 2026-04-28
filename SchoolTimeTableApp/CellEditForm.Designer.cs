@@ -49,12 +49,14 @@ namespace testing
             this.labelSubject.TabIndex = 2;
             this.labelSubject.Text     = "Предмет:";
             // comboSubject
-            this.comboSubject.DropDownStyle    = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboSubject.FormattingEnabled = true;
-            this.comboSubject.Location         = new System.Drawing.Point(12, 84);
-            this.comboSubject.Name             = "comboSubject";
-            this.comboSubject.Size             = new System.Drawing.Size(420, 21);
-            this.comboSubject.TabIndex         = 3;
+            this.comboSubject.AutoCompleteMode   = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.comboSubject.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
+            this.comboSubject.DropDownStyle      = System.Windows.Forms.ComboBoxStyle.DropDown;
+            this.comboSubject.FormattingEnabled  = true;
+            this.comboSubject.Location           = new System.Drawing.Point(12, 84);
+            this.comboSubject.Name               = "comboSubject";
+            this.comboSubject.Size               = new System.Drawing.Size(420, 21);
+            this.comboSubject.TabIndex           = 3;
             // labelTeacher
             this.labelTeacher.AutoSize = true;
             this.labelTeacher.Location = new System.Drawing.Point(12, 118);
@@ -62,12 +64,14 @@ namespace testing
             this.labelTeacher.TabIndex = 4;
             this.labelTeacher.Text     = "Учитель:";
             // comboTeacher
-            this.comboTeacher.DropDownStyle    = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboTeacher.FormattingEnabled = true;
-            this.comboTeacher.Location         = new System.Drawing.Point(12, 134);
-            this.comboTeacher.Name             = "comboTeacher";
-            this.comboTeacher.Size             = new System.Drawing.Size(388, 21);
-            this.comboTeacher.TabIndex         = 5;
+            this.comboTeacher.AutoCompleteMode   = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.comboTeacher.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
+            this.comboTeacher.DropDownStyle      = System.Windows.Forms.ComboBoxStyle.DropDown;
+            this.comboTeacher.FormattingEnabled  = true;
+            this.comboTeacher.Location           = new System.Drawing.Point(12, 134);
+            this.comboTeacher.Name               = "comboTeacher";
+            this.comboTeacher.Size               = new System.Drawing.Size(388, 21);
+            this.comboTeacher.TabIndex           = 5;
             // buttonAddTeacher — кнопка быстрого добавления учителя
             this.buttonAddTeacher.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonAddTeacher.Font      = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
@@ -86,12 +90,14 @@ namespace testing
             this.labelClassroom.TabIndex = 7;
             this.labelClassroom.Text     = "Кабинет:";
             // comboClassroom
-            this.comboClassroom.DropDownStyle    = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboClassroom.FormattingEnabled = true;
-            this.comboClassroom.Location         = new System.Drawing.Point(12, 184);
-            this.comboClassroom.Name             = "comboClassroom";
-            this.comboClassroom.Size             = new System.Drawing.Size(388, 21);
-            this.comboClassroom.TabIndex         = 8;
+            this.comboClassroom.AutoCompleteMode   = System.Windows.Forms.AutoCompleteMode.SuggestAppend;
+            this.comboClassroom.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.ListItems;
+            this.comboClassroom.DropDownStyle      = System.Windows.Forms.ComboBoxStyle.DropDown;
+            this.comboClassroom.FormattingEnabled  = true;
+            this.comboClassroom.Location           = new System.Drawing.Point(12, 184);
+            this.comboClassroom.Name               = "comboClassroom";
+            this.comboClassroom.Size               = new System.Drawing.Size(388, 21);
+            this.comboClassroom.TabIndex           = 8;
             // buttonAddClassroom — кнопка быстрого добавления кабинета
             this.buttonAddClassroom.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonAddClassroom.Font      = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);

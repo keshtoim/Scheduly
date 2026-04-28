@@ -169,7 +169,8 @@ namespace testing
                 // Get all conflicts for this class with full details
                 DataTable dt = DbHelper.Query(
                     "SELECT DISTINCT s1.day_of_week, s1.lesson_number, " +
-                    "sub1.subject_name AS subj1, t1.name AS teach1, " +
+                    "sub1.subject_name AS subj1, " +
+                    "t1.surname + ' ' + t1.name + ' ' + ISNULL(t1.patronymic,'') AS teach1, " +
                     "CASE WHEN w1.teacher_id = w2.teacher_id THEN 'учитель' ELSE 'кабинет' END AS conflict_type, " +
                     "CAST(cp2.parallel AS NVARCHAR) + lc2.letterClass AS other_class " +
                     "FROM Schedule s1 " +

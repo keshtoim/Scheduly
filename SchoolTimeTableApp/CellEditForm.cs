@@ -104,10 +104,15 @@ namespace testing
         {
             try
             {
+                // Показываем только учителей которые есть в нагрузке данного класса
                 DataTable dt = DbHelper.Query(
-                    "SELECT teacher_id, " +
-                    "surname + ' ' + name + ' ' + ISNULL(patronymic, '') AS full_name " +
-                    "FROM Teachers ORDER BY surname, name", null);
+                    "SELECT DISTINCT t.teacher_id, " +
+                    "t.surname + ' ' + t.name + ' ' + ISNULL(t.patronymic, '') AS full_name " +
+                    "FROM Teachers t " +
+                    "JOIN Workload w ON w.teacher_id = t.teacher_id " +
+                    "WHERE w.class_id = @cid " +
+                    "ORDER BY t.surname, t.name",
+                    p => p.AddWithValue("@cid", _classId));
 
                 comboTeacher.DisplayMember = "full_name";
                 comboTeacher.ValueMember   = "teacher_id";

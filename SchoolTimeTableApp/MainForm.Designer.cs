@@ -37,7 +37,7 @@ namespace testing
             this.panelTop.Controls.Add(this.labelAppTitle);
             this.panelTop.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelTop.Location = new System.Drawing.Point(0, 0);
-            this.panelTop.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.panelTop.Margin = new System.Windows.Forms.Padding(4);
             this.panelTop.Name = "panelTop";
             this.panelTop.Size = new System.Drawing.Size(1600, 57);
             this.panelTop.TabIndex = 0;
@@ -48,7 +48,7 @@ namespace testing
             this.buttonLogout.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonLogout.ForeColor = System.Drawing.Color.White;
             this.buttonLogout.Location = new System.Drawing.Point(1451, 11);
-            this.buttonLogout.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.buttonLogout.Margin = new System.Windows.Forms.Padding(4);
             this.buttonLogout.Name = "buttonLogout";
             this.buttonLogout.Size = new System.Drawing.Size(133, 32);
             this.buttonLogout.TabIndex = 2;
@@ -88,7 +88,7 @@ namespace testing
             this.tabControl.Controls.Add(this.tabPageReferences);
             this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tabControl.Location = new System.Drawing.Point(0, 57);
-            this.tabControl.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tabControl.Margin = new System.Windows.Forms.Padding(4);
             this.tabControl.Name = "tabControl";
             this.tabControl.SelectedIndex = 0;
             this.tabControl.Size = new System.Drawing.Size(1600, 875);
@@ -98,7 +98,7 @@ namespace testing
             // tabPageSchedule
             // 
             this.tabPageSchedule.Location = new System.Drawing.Point(4, 25);
-            this.tabPageSchedule.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tabPageSchedule.Margin = new System.Windows.Forms.Padding(4);
             this.tabPageSchedule.Name = "tabPageSchedule";
             this.tabPageSchedule.Size = new System.Drawing.Size(1592, 846);
             this.tabPageSchedule.TabIndex = 0;
@@ -108,9 +108,9 @@ namespace testing
             // tabPageCompose
             // 
             this.tabPageCompose.Location = new System.Drawing.Point(4, 25);
-            this.tabPageCompose.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tabPageCompose.Margin = new System.Windows.Forms.Padding(4);
             this.tabPageCompose.Name = "tabPageCompose";
-            this.tabPageCompose.Size = new System.Drawing.Size(1592, 845);
+            this.tabPageCompose.Size = new System.Drawing.Size(1592, 846);
             this.tabPageCompose.TabIndex = 1;
             this.tabPageCompose.Text = "Составление";
             this.tabPageCompose.UseVisualStyleBackColor = true;
@@ -118,9 +118,9 @@ namespace testing
             // tabPageWorkload
             // 
             this.tabPageWorkload.Location = new System.Drawing.Point(4, 25);
-            this.tabPageWorkload.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tabPageWorkload.Margin = new System.Windows.Forms.Padding(4);
             this.tabPageWorkload.Name = "tabPageWorkload";
-            this.tabPageWorkload.Size = new System.Drawing.Size(1592, 845);
+            this.tabPageWorkload.Size = new System.Drawing.Size(1592, 846);
             this.tabPageWorkload.TabIndex = 2;
             this.tabPageWorkload.Text = "Нагрузка";
             this.tabPageWorkload.UseVisualStyleBackColor = true;
@@ -128,9 +128,9 @@ namespace testing
             // tabPageReferences
             // 
             this.tabPageReferences.Location = new System.Drawing.Point(4, 25);
-            this.tabPageReferences.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tabPageReferences.Margin = new System.Windows.Forms.Padding(4);
             this.tabPageReferences.Name = "tabPageReferences";
-            this.tabPageReferences.Size = new System.Drawing.Size(1592, 845);
+            this.tabPageReferences.Size = new System.Drawing.Size(1592, 846);
             this.tabPageReferences.TabIndex = 3;
             this.tabPageReferences.Text = "Справочники";
             this.tabPageReferences.UseVisualStyleBackColor = true;
@@ -161,7 +161,7 @@ namespace testing
             this.Controls.Add(this.panelTop);
             this.Controls.Add(this.statusStrip);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MinimumSize = new System.Drawing.Size(1327, 851);
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;

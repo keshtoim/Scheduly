@@ -72,5 +72,19 @@ namespace testing
             if (e.KeyCode == Keys.Enter)
                 buttonLogin_Click(sender, e);
         }
+
+        private void buttonShowPassword_Click(object sender, EventArgs e)
+        {
+            if (textBoxPassword.PasswordChar == '*')
+            {
+                textBoxPassword.PasswordChar = '\0';
+                buttonShowPassword.Text = "🙈";
+            }
+            else
+            {
+                textBoxPassword.PasswordChar = '*';
+                buttonShowPassword.Text = "👁";
+            }
+        }
     }
 }
