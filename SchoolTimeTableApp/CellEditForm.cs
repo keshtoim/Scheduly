@@ -451,6 +451,8 @@ namespace testing
             catch { }
             return null;
         }
+
+        private string CheckConflicts(int workloadId, int classroomId)
         {
             string skipClause = _existing != null
                 ? " AND s.schedule_id <> " + _existing["schedule_id"]
