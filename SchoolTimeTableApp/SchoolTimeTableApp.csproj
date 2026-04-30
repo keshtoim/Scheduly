@@ -127,6 +127,8 @@
       <DependentUpon>QuickAddClassroomForm.cs</DependentUpon>
     </Compile>
     <!-- ── UserControls ── -->
+    <Compile Include="SettingsForm.cs" />
+    <Compile Include="SettingsForm.Designer.cs" />
     <Compile Include="ViewScheduleControl.cs">
       <SubType>UserControl</SubType>
     </Compile>

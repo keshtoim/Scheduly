@@ -102,6 +102,12 @@ namespace testing
         /// При успешном повторном входе обновляет пользователя и перезагружает данные.
         /// При отмене — завершает приложение.
         /// </summary>
+        private void buttonSettings_Click(object sender, EventArgs e)
+        {
+            using (SettingsForm dlg = new SettingsForm())
+                dlg.ShowDialog(this);
+        }
+
         private void buttonLogout_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Выйти из системы?", "Выход",

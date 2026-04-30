@@ -169,7 +169,17 @@ namespace testing
             int workloadId = ResolveWorkloadId(subjectId, teacherId);
             if (workloadId < 0) return;
 
-            // Проверяем конфликты — занятость учителя и кабинета
+            // Проверяем лимит уроков в день для этого класса
+            string limitConflict = CheckDayLimit();
+            if (limitConflict != null)
+            {
+                DialogResult dr = MessageBox.Show(
+                    limitConflict + "\n\nВсё равно добавить?",
+                    "Превышение лимита", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (dr != DialogResult.Yes) return;
+            }
+
+            // Проверяем конфликты — занятость учителя
             string conflictMsg = CheckConflicts(workloadId, classroomId);
             if (!string.IsNullOrEmpty(conflictMsg))
             {
@@ -394,14 +404,60 @@ namespace testing
         /// При редактировании исключает текущую запись из проверки.
         /// </summary>
         /// <returns>Текст описания конфликта или null если конфликтов нет.</returns>
-        private string CheckConflicts(int workloadId, int classroomId)
+        /// <summary>
+        /// Проверяет не превышен ли лимит уроков в день для этого класса.
+        /// Лимит берётся из настроек (SettingsForm), по умолчанию из реального расписания.
+        /// </summary>
+        private string CheckDayLimit()
         {
-            // При редактировании исключаем текущую запись из проверки
+            try
+            {
+                // Получаем название класса
+                DataTable dtCls = DbHelper.Query(
+                    "SELECT CAST(cp.parallel AS NVARCHAR) + lc.letterClass AS class_name " +
+                    "FROM Classes cl " +
+                    "JOIN ClassParallel cp ON cl.id_parallel_class = cp.id_parallel_class " +
+                    "JOIN LetterOfTheClass lc ON cl.id_letter_class = lc.id_letter_class " +
+                    "WHERE cl.class_id = @cid",
+                    p => p.AddWithValue("@cid", _classId));
+
+                if (dtCls.Rows.Count == 0) return null;
+                string className = dtCls.Rows[0]["class_name"].ToString();
+                int limit = SettingsForm.GetLimit(className);
+
+                // Считаем сколько уроков уже стоит в этот день
+                // При редактировании исключаем текущий урок
+                string skipClause = _existing != null
+                    ? " AND s.schedule_id <> " + _existing["schedule_id"]
+                    : "";
+
+                DataTable dtCount = DbHelper.Query(
+                    "SELECT COUNT(*) AS cnt FROM Schedule s " +
+                    "JOIN Workload w ON s.workload_id = w.workload_id " +
+                    "WHERE w.class_id = @cid AND s.day_of_week = @d" + skipClause,
+                    p => {
+                        p.AddWithValue("@cid", _classId);
+                        p.AddWithValue("@d",   _day);
+                    });
+
+                int current = Convert.ToInt32(dtCount.Rows[0]["cnt"]);
+
+                if (current >= limit)
+                    return string.Format(
+                        "Для класса {0} установлен лимит {1} уроков в день.\n" +
+                        "В этот день уже стоит {2} уроков.",
+                        className, limit, current);
+            }
+            catch { }
+            return null;
+        }
+        {
             string skipClause = _existing != null
                 ? " AND s.schedule_id <> " + _existing["schedule_id"]
                 : "";
 
-            // Проверяем занятость учителя — через teacher_id из workload
+            // Проверяем только занятость учителя
+            // Занятость кабинета контролируется триггером UQ_Classroom_Time на уровне БД
             bool teacherBusy = DbHelper.Exists(
                 "SELECT COUNT(*) FROM Schedule s " +
                 "JOIN Workload w  ON s.workload_id  = w.workload_id " +
@@ -414,20 +470,7 @@ namespace testing
                     p.AddWithValue("@l",   _lesson);
                 });
 
-            // Проверяем занятость кабинета — прямая проверка по classroom_id
-            bool roomBusy = DbHelper.Exists(
-                "SELECT COUNT(*) FROM Schedule s " +
-                "WHERE s.day_of_week = @d AND s.lesson_number = @l " +
-                "AND s.classroom_id = @cr" + skipClause,
-                p => {
-                    p.AddWithValue("@d",  _day);
-                    p.AddWithValue("@l",  _lesson);
-                    p.AddWithValue("@cr", classroomId);
-                });
-
-            if (teacherBusy && roomBusy) return "Учитель и кабинет уже заняты в это время.";
-            if (teacherBusy)             return "Учитель уже ведёт другой урок в это время.";
-            if (roomBusy)                return "Кабинет уже занят в это время.";
+            if (teacherBusy) return "Учитель уже ведёт другой урок в это время.";
             return null;
         }
     }
