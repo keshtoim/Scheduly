@@ -40,6 +40,8 @@ namespace testing
         private void CellEditForm_Load(object sender, EventArgs e)
         {
             labelSlot.Text = string.Format("{0}, урок {1}", DayNames[_day], _lesson);
+            // Временно показываем class_id в заголовке для отладки
+            this.Text = string.Format("Урок [class_id={0}]", _classId);
 
             LoadSubjects();
             LoadTeachers();

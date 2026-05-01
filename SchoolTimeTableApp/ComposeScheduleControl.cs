@@ -34,9 +34,10 @@ namespace testing
                     "JOIN ClassParallel cp ON cl.id_parallel_class = cp.id_parallel_class " +
                     "JOIN LetterOfTheClass lc ON cl.id_letter_class = lc.id_letter_class " +
                     "ORDER BY cp.parallel, lc.letterClass");
-                listBoxClasses.DataSource    = dt;
+                // DisplayMember/ValueMember до DataSource — иначе ListBox не подхватит ValueMember
                 listBoxClasses.DisplayMember = "class_name";
                 listBoxClasses.ValueMember   = "class_id";
+                listBoxClasses.DataSource    = dt;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка классов"); }
         }
