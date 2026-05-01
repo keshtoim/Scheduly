@@ -125,20 +125,63 @@ namespace testing
         /// Загружает все кабинеты с указанием типа.
         /// room_number приводится к NVARCHAR чтобы избежать ошибки конкатенации с tinyint.
         /// </summary>
+        /// <summary>
+        /// Загружает кабинеты с пометкой занятости в текущий слот.
+        /// Свободные кабинеты показываются первыми, занятые — в конце с пометкой «ЗАНЯТ».
+        /// </summary>
         private void LoadClassrooms()
         {
             try
             {
-                DataTable dt = DbHelper.Query(
-                    "SELECT cr.classroom_id, " +
-                    "CAST(cr.room_number AS NVARCHAR) + ' (' + ct.classroom_type + ')' AS display " +
+                // Получаем все кабинеты
+                DataTable dtAll = DbHelper.Query(
+                    "SELECT cr.classroom_id, cr.room_number, ct.classroom_type " +
                     "FROM Classrooms cr " +
                     "JOIN ClassroomTypes ct ON cr.type_id = ct.type_id " +
-                    "ORDER BY cr.room_number", null);
+                    "ORDER BY cr.room_number");
+
+                // Получаем занятые кабинеты в этот день и урок
+                string skipClause = _existing != null
+                    ? " AND s.schedule_id <> " + _existing["schedule_id"]
+                    : "";
+                DataTable dtBusy = DbHelper.Query(
+                    "SELECT s.classroom_id FROM Schedule s " +
+                    "WHERE s.day_of_week = @d AND s.lesson_number = @l" + skipClause,
+                    p => {
+                        p.AddWithValue("@d", _day);
+                        p.AddWithValue("@l", _lesson);
+                    });
+
+                var busyIds = new System.Collections.Generic.HashSet<int>();
+                foreach (System.Data.DataRow r in dtBusy.Rows)
+                    busyIds.Add(Convert.ToInt32(r["classroom_id"]));
+
+                // Строим новую таблицу: сначала свободные, потом занятые
+                DataTable dtDisplay = new DataTable();
+                dtDisplay.Columns.Add("classroom_id", typeof(int));
+                dtDisplay.Columns.Add("display",      typeof(string));
+
+                // Свободные
+                foreach (System.Data.DataRow r in dtAll.Rows)
+                {
+                    int id = Convert.ToInt32(r["classroom_id"]);
+                    if (!busyIds.Contains(id))
+                        dtDisplay.Rows.Add(id,
+                            string.Format("{0} ({1})", r["room_number"], r["classroom_type"]));
+                }
+
+                // Занятые — с пометкой
+                foreach (System.Data.DataRow r in dtAll.Rows)
+                {
+                    int id = Convert.ToInt32(r["classroom_id"]);
+                    if (busyIds.Contains(id))
+                        dtDisplay.Rows.Add(id,
+                            string.Format("{0} ({1})  ⛔ ЗАНЯТ", r["room_number"], r["classroom_type"]));
+                }
 
                 comboClassroom.DisplayMember = "display";
                 comboClassroom.ValueMember   = "classroom_id";
-                comboClassroom.DataSource    = dt;
+                comboClassroom.DataSource    = dtDisplay;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка кабинетов"); }
         }
