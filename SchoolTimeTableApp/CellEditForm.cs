@@ -104,8 +104,8 @@ namespace testing
         {
             try
             {
-                // DISTINCT + ORDER BY требует чтобы поля сортировки были в SELECT
-                DataTable dt = DbHelper.Query(
+                // Все учителя из нагрузки класса
+                DataTable dtAll = DbHelper.Query(
                     "SELECT t.teacher_id, " +
                     "t.surname + ' ' + t.name + ' ' + ISNULL(t.patronymic, '') AS full_name " +
                     "FROM Teachers t " +
@@ -114,9 +114,46 @@ namespace testing
                     "ORDER BY t.surname, t.name",
                     p => p.AddWithValue("@cid", _classId));
 
+                // Занятые учителя в этот день и урок
+                string skipClause = _existing != null
+                    ? " AND s.schedule_id <> " + _existing["schedule_id"]
+                    : "";
+                DataTable dtBusy = DbHelper.Query(
+                    "SELECT DISTINCT w.teacher_id FROM Schedule s " +
+                    "JOIN Workload w ON s.workload_id = w.workload_id " +
+                    "WHERE s.day_of_week = @d AND s.lesson_number = @l" + skipClause,
+                    p => {
+                        p.AddWithValue("@d", _day);
+                        p.AddWithValue("@l", _lesson);
+                    });
+
+                var busyIds = new System.Collections.Generic.HashSet<int>();
+                foreach (System.Data.DataRow r in dtBusy.Rows)
+                    busyIds.Add(Convert.ToInt32(r["teacher_id"]));
+
+                // Сначала свободные, потом занятые
+                DataTable dtDisplay = new DataTable();
+                dtDisplay.Columns.Add("teacher_id", typeof(int));
+                dtDisplay.Columns.Add("full_name",  typeof(string));
+
+                foreach (System.Data.DataRow r in dtAll.Rows)
+                {
+                    int id = Convert.ToInt32(r["teacher_id"]);
+                    if (!busyIds.Contains(id))
+                        dtDisplay.Rows.Add(id, r["full_name"].ToString());
+                }
+
+                foreach (System.Data.DataRow r in dtAll.Rows)
+                {
+                    int id = Convert.ToInt32(r["teacher_id"]);
+                    if (busyIds.Contains(id))
+                        dtDisplay.Rows.Add(id,
+                            r["full_name"].ToString() + "  ⛔ ЗАНЯТ");
+                }
+
                 comboTeacher.DisplayMember = "full_name";
                 comboTeacher.ValueMember   = "teacher_id";
-                comboTeacher.DataSource    = dt;
+                comboTeacher.DataSource    = dtDisplay;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка учителей"); }
         }
