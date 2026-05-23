@@ -1,29 +1,20 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Windows.Forms;
 
 namespace testing
 {
-    /// <summary>
-    /// Диалог назначения или редактирования одного урока в расписании.
-    /// Открывается при клике на ячейку сетки во вкладке «Составление».
-    /// Позволяет выбрать предмет, учителя и кабинет независимо друг от друга.
-    /// Перед сохранением проверяет конфликты.
-    /// </summary>
     public partial class CellEditForm : Form
     {
-        private readonly int     _classId;   // ID класса для которого добавляется урок
-        private readonly int     _day;       // День недели (1=Пн ... 5=Пт)
-        private readonly int     _lesson;    // Номер урока (1-8)
-        private readonly DataRow _existing;  // Существующая запись при редактировании, null при добавлении
+        private readonly int     _classId;
+        private readonly int     _day;
+        private readonly int     _lesson;
+        private readonly DataRow _existing;
 
         private static readonly string[] DayNames =
             { "", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница" };
 
-        /// <summary>
-        /// Создаёт диалог для указанного слота.
-        /// </summary>
-        /// <param name="existing">null — режим добавления, DataRow — режим редактирования.</param>
         public CellEditForm(int classId, int day, int lesson, DataRow existing)
         {
             _classId  = classId;
@@ -33,34 +24,30 @@ namespace testing
             InitializeComponent();
         }
 
-        /// <summary>
-        /// Загружает данные при открытии формы.
-        /// Заполняет выпадающие списки и предварительно выбирает текущие значения при редактировании.
-        /// </summary>
         private void CellEditForm_Load(object sender, EventArgs e)
         {
             labelSlot.Text = string.Format("{0}, урок {1}", DayNames[_day], _lesson);
-
             LoadSubjects();
             LoadTeachers();
             LoadClassrooms();
 
             if (_existing != null)
             {
-                // Режим редактирования — предвыбираем текущие значения
+                // Предвыбираем текущие значения
                 foreach (DataRowView drv in comboSubject.Items)
-                    if (drv["subject_id"].ToString() == _existing["subject_id"].ToString())
+                    if (drv["ID_предмета_со_сложностью"].ToString() ==
+                        _existing["ID_предмета_со_сложностью"].ToString())
                     { comboSubject.SelectedItem = drv; break; }
 
                 foreach (DataRowView drv in comboTeacher.Items)
-                    if (drv["teacher_id"].ToString() == _existing["teacher_id"].ToString())
+                    if (drv["teacher_id"].ToString() == _existing["ID_учителя"].ToString())
                     { comboTeacher.SelectedItem = drv; break; }
 
                 foreach (DataRowView drv in comboClassroom.Items)
-                    if (drv["classroom_id"].ToString() == _existing["classroom_id"].ToString())
+                    if (drv["classroom_id"].ToString() == _existing["ID_кабинета"].ToString())
                     { comboClassroom.SelectedItem = drv; break; }
 
-                buttonDelete.Visible = true; // Кнопка удаления только при редактировании
+                buttonDelete.Visible = true;
             }
             else
             {
@@ -68,87 +55,68 @@ namespace testing
             }
         }
 
-        // ── Загрузка списков ──────────────────────────────────────────────────
-
-        /// <summary>
-        /// Загружает предметы из нагрузки данного класса.
-        /// Показывает только те предметы, которые уже назначены классу через таблицу Workload.
-        /// </summary>
         private void LoadSubjects()
         {
             try
             {
+                // Предметы из нагрузки данного класса через новую схему
                 DataTable dt = DbHelper.Query(
-                    "SELECT s.subject_id, s.subject_name " +
-                    "FROM Subjects s " +
-                    "WHERE s.subject_id IN " +
-                    "  (SELECT subject_id FROM Workload WHERE class_id = @cid) " +
-                    "ORDER BY s.subject_name",
+                    "SELECT DISTINCT sbp.ID_предмета_со_сложностью, sub.Название AS subject_name " +
+                    "FROM Workload w " +
+                    "JOIN SubjectByParallel sbp ON w.ID_предмета_параллели = sbp.ID_предмета_со_сложностью " +
+                    "JOIN Subjects sub ON sbp.ID_предмета = sub.ID_предмета " +
+                    "WHERE w.ID_класса = @cid " +
+                    "ORDER BY sub.Название",
                     p => p.AddWithValue("@cid", _classId));
 
-                // DisplayMember/ValueMember устанавливаем ДО DataSource —
-                // иначе ComboBox привязывается к данным раньше чем узнаёт
-                // какой столбец отображать, и показывает только первую строку
                 comboSubject.DisplayMember = "subject_name";
-                comboSubject.ValueMember   = "subject_id";
+                comboSubject.ValueMember   = "ID_предмета_со_сложностью";
                 comboSubject.DataSource    = dt;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка предметов"); }
         }
 
-        /// <summary>
-        /// Загружает всех учителей без привязки к предмету.
-        /// Пользователь может выбрать любого учителя — замены реализованы через это.
-        /// </summary>
         private void LoadTeachers()
         {
             try
             {
-                // Все учителя из нагрузки класса
                 DataTable dtAll = DbHelper.Query(
-                    "SELECT t.teacher_id, " +
-                    "t.surname + ' ' + t.name + ' ' + ISNULL(t.patronymic, '') AS full_name " +
+                    "SELECT t.ID_учителя AS teacher_id, " +
+                    "t.Фамилия + ' ' + t.Имя + ' ' + t.Отчество AS full_name " +
                     "FROM Teachers t " +
-                    "WHERE t.teacher_id IN " +
-                    "  (SELECT DISTINCT w.teacher_id FROM Workload w WHERE w.class_id = @cid) " +
-                    "ORDER BY t.surname, t.name",
+                    "WHERE t.ID_учителя IN " +
+                    "  (SELECT DISTINCT w.ID_учителя FROM Workload w WHERE w.ID_класса = @cid) " +
+                    "ORDER BY t.Фамилия, t.Имя",
                     p => p.AddWithValue("@cid", _classId));
 
-                // Занятые учителя в этот день и урок
-                string skipClause = _existing != null
-                    ? " AND s.schedule_id <> " + _existing["schedule_id"]
-                    : "";
+                // Занятые в данный слот учителя
                 DataTable dtBusy = DbHelper.Query(
-                    "SELECT DISTINCT w.teacher_id FROM Schedule s " +
-                    "JOIN Workload w ON s.workload_id = w.workload_id " +
-                    "WHERE s.day_of_week = @d AND s.lesson_number = @l" + skipClause,
+                    "SELECT DISTINCT ID_учителя FROM vw_Schedule " +
+                    "WHERE ID_дня_недели = @d AND Номер_урока = @l" +
+                    (_existing != null ? " AND ID_расписания <> @sid" : ""),
                     p => {
-                        p.AddWithValue("@d", _day);
-                        p.AddWithValue("@l", _lesson);
+                        p.AddWithValue("@d", _day); p.AddWithValue("@l", _lesson);
+                        if (_existing != null) p.AddWithValue("@sid", _existing["ID_расписания"]);
                     });
 
-                var busyIds = new System.Collections.Generic.HashSet<int>();
-                foreach (System.Data.DataRow r in dtBusy.Rows)
-                    busyIds.Add(Convert.ToInt32(r["teacher_id"]));
+                var busyIds = new HashSet<int>();
+                foreach (DataRow r in dtBusy.Rows) busyIds.Add(Convert.ToInt32(r["ID_учителя"]));
 
-                // Сначала свободные, потом занятые
                 DataTable dtDisplay = new DataTable();
                 dtDisplay.Columns.Add("teacher_id", typeof(int));
                 dtDisplay.Columns.Add("full_name",  typeof(string));
 
-                foreach (System.Data.DataRow r in dtAll.Rows)
+                foreach (DataRow r in dtAll.Rows)
                 {
                     int id = Convert.ToInt32(r["teacher_id"]);
                     if (!busyIds.Contains(id))
                         dtDisplay.Rows.Add(id, r["full_name"].ToString());
                 }
-
-                foreach (System.Data.DataRow r in dtAll.Rows)
+                foreach (DataRow r in dtAll.Rows)
                 {
                     int id = Convert.ToInt32(r["teacher_id"]);
                     if (busyIds.Contains(id))
-                        dtDisplay.Rows.Add(id,
-                            r["full_name"].ToString() + "  ⛔ ЗАНЯТ");
+                        dtDisplay.Rows.Add(id, r["full_name"] + "  ⛔ ЗАНЯТ");
                 }
 
                 comboTeacher.DisplayMember = "full_name";
@@ -158,62 +126,44 @@ namespace testing
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка учителей"); }
         }
 
-        /// <summary>
-        /// Загружает все кабинеты с указанием типа.
-        /// room_number приводится к NVARCHAR чтобы избежать ошибки конкатенации с tinyint.
-        /// </summary>
-        /// <summary>
-        /// Загружает кабинеты с пометкой занятости в текущий слот.
-        /// Свободные кабинеты показываются первыми, занятые — в конце с пометкой «ЗАНЯТ».
-        /// </summary>
         private void LoadClassrooms()
         {
             try
             {
-                // Получаем все кабинеты
                 DataTable dtAll = DbHelper.Query(
-                    "SELECT cr.classroom_id, cr.room_number, ct.classroom_type " +
-                    "FROM Classrooms cr " +
-                    "JOIN ClassroomTypes ct ON cr.type_id = ct.type_id " +
-                    "ORDER BY cr.room_number");
+                    "SELECT cr.ID_кабинета AS classroom_id, cr.Номер, ct.Тип_кабинета, " +
+                    "CAST(cr.Номер AS NVARCHAR) + ' (' + ct.Тип_кабинета + ')' AS display " +
+                    "FROM Classrooms cr JOIN ClassroomTypes ct ON cr.ID_типа_кабинета = ct.ID_типа_кабинета " +
+                    "ORDER BY cr.Номер");
 
-                // Получаем занятые кабинеты в этот день и урок
-                string skipClause = _existing != null
-                    ? " AND s.schedule_id <> " + _existing["schedule_id"]
-                    : "";
+                // Занятые кабинеты в данный слот
                 DataTable dtBusy = DbHelper.Query(
-                    "SELECT s.classroom_id FROM Schedule s " +
-                    "WHERE s.day_of_week = @d AND s.lesson_number = @l" + skipClause,
+                    "SELECT DISTINCT ID_кабинета FROM Schedule s " +
+                    "WHERE ID_дня_недели = @d AND ID_номера_урока = @l" +
+                    (_existing != null ? " AND ID_расписания <> @sid" : ""),
                     p => {
-                        p.AddWithValue("@d", _day);
-                        p.AddWithValue("@l", _lesson);
+                        p.AddWithValue("@d", _day); p.AddWithValue("@l", _lesson);
+                        if (_existing != null) p.AddWithValue("@sid", _existing["ID_расписания"]);
                     });
 
-                var busyIds = new System.Collections.Generic.HashSet<int>();
-                foreach (System.Data.DataRow r in dtBusy.Rows)
-                    busyIds.Add(Convert.ToInt32(r["classroom_id"]));
+                var busyIds = new HashSet<int>();
+                foreach (DataRow r in dtBusy.Rows) busyIds.Add(Convert.ToInt32(r["ID_кабинета"]));
 
-                // Строим новую таблицу: сначала свободные, потом занятые
                 DataTable dtDisplay = new DataTable();
                 dtDisplay.Columns.Add("classroom_id", typeof(int));
                 dtDisplay.Columns.Add("display",      typeof(string));
 
-                // Свободные
-                foreach (System.Data.DataRow r in dtAll.Rows)
+                foreach (DataRow r in dtAll.Rows)
                 {
                     int id = Convert.ToInt32(r["classroom_id"]);
                     if (!busyIds.Contains(id))
-                        dtDisplay.Rows.Add(id,
-                            string.Format("{0} ({1})", r["room_number"], r["classroom_type"]));
+                        dtDisplay.Rows.Add(id, r["display"].ToString());
                 }
-
-                // Занятые — с пометкой
-                foreach (System.Data.DataRow r in dtAll.Rows)
+                foreach (DataRow r in dtAll.Rows)
                 {
                     int id = Convert.ToInt32(r["classroom_id"]);
                     if (busyIds.Contains(id))
-                        dtDisplay.Rows.Add(id,
-                            string.Format("{0} ({1})  ⛔ ЗАНЯТ", r["room_number"], r["classroom_type"]));
+                        dtDisplay.Rows.Add(id, r["display"] + "  ⛔ ЗАНЯТ");
                 }
 
                 comboClassroom.DisplayMember = "display";
@@ -223,13 +173,6 @@ namespace testing
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка кабинетов"); }
         }
 
-        // ── Сохранение ────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Сохраняет урок в расписании.
-        /// Сначала находит или создаёт запись Workload для данной комбинации класс+предмет+учитель,
-        /// затем проверяет конфликты и выполняет INSERT или UPDATE в таблице Schedule.
-        /// </summary>
         private void buttonSave_Click(object sender, EventArgs e)
         {
             if (comboSubject.SelectedValue == null ||
@@ -241,234 +184,147 @@ namespace testing
                 return;
             }
 
-            int subjectId   = Convert.ToInt32(comboSubject.SelectedValue);
-            int teacherId   = Convert.ToInt32(comboTeacher.SelectedValue);
-            int classroomId = Convert.ToInt32(comboClassroom.SelectedValue);
+            int subjectParallelId = Convert.ToInt32(comboSubject.SelectedValue);
+            int teacherId         = Convert.ToInt32(comboTeacher.SelectedValue);
+            int classroomId       = Convert.ToInt32(comboClassroom.SelectedValue);
 
-            // Находим или создаём запись нагрузки для этой комбинации
-            int workloadId = ResolveWorkloadId(subjectId, teacherId);
+            // Проверка лимита уроков
+            string limitMsg = CheckDayLimit();
+            if (limitMsg != null)
+            {
+                if (MessageBox.Show(limitMsg + "\n\nВсё равно добавить?",
+                    "Превышение лимита", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+                    != DialogResult.Yes) return;
+            }
+
+            // Проверка конфликта учителя
+            string conflictMsg = CheckTeacherConflict(teacherId);
+            if (conflictMsg != null)
+            {
+                if (MessageBox.Show("Обнаружен конфликт:\n" + conflictMsg + "\n\nВсё равно сохранить?",
+                    "Конфликт расписания", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+                    != DialogResult.Yes) return;
+            }
+
+            // Находим или создаём нагрузку
+            int workloadId = ResolveWorkloadId(subjectParallelId, teacherId);
             if (workloadId < 0) return;
-
-            // Проверяем лимит уроков в день для этого класса
-            string limitConflict = CheckDayLimit();
-            if (limitConflict != null)
-            {
-                DialogResult dr = MessageBox.Show(
-                    limitConflict + "\n\nВсё равно добавить?",
-                    "Превышение лимита", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                if (dr != DialogResult.Yes) return;
-            }
-
-            // Проверяем конфликты — занятость учителя
-            string conflictMsg = CheckConflicts(workloadId, classroomId);
-            if (!string.IsNullOrEmpty(conflictMsg))
-            {
-                DialogResult dr = MessageBox.Show(
-                    "Обнаружен конфликт:\n" + conflictMsg + "\n\nВсё равно сохранить?",
-                    "Конфликт расписания", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                if (dr != DialogResult.Yes) return;
-            }
 
             try
             {
                 if (_existing == null)
                 {
-                    // Новый урок — INSERT
-                    DbHelper.Execute(
-                        "INSERT INTO Schedule (workload_id, classroom_id, day_of_week, lesson_number) " +
-                        "VALUES (@w, @cr, @d, @l)",
+                    // Используем хранимую процедуру
+                    DbHelper.ExecProcNonQuery("sp_AddLesson",
                         p => {
-                            p.AddWithValue("@w",  workloadId);
-                            p.AddWithValue("@cr", classroomId);
-                            p.AddWithValue("@d",  _day);
-                            p.AddWithValue("@l",  _lesson);
+                            p.AddWithValue("@ID_нагрузки",     workloadId);
+                            p.AddWithValue("@ID_кабинета",     classroomId);
+                            p.AddWithValue("@ID_дня_недели",   _day);
+                            p.AddWithValue("@ID_номера_урока", _lesson);
                         });
                 }
                 else
                 {
-                    // Редактирование — UPDATE по schedule_id
-                    DbHelper.Execute(
-                        "UPDATE Schedule SET workload_id = @w, classroom_id = @cr " +
-                        "WHERE schedule_id = @id",
+                    DbHelper.ExecProcNonQuery("sp_UpdateLesson",
                         p => {
-                            p.AddWithValue("@w",  workloadId);
-                            p.AddWithValue("@cr", classroomId);
-                            p.AddWithValue("@id", Convert.ToInt32(_existing["schedule_id"]));
+                            p.AddWithValue("@ID_расписания", Convert.ToInt32(_existing["ID_расписания"]));
+                            p.AddWithValue("@ID_нагрузки",   workloadId);
+                            p.AddWithValue("@ID_кабинета",   classroomId);
                         });
                 }
-
                 DialogResult = DialogResult.OK;
                 Close();
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Сохранение урока"); }
         }
 
-        /// <summary>
-        /// Находит существующую запись Workload для комбинации класс+предмет+учитель.
-        /// Если запись не найдена — создаёт новую с hours_per_week = 0.
-        /// Возвращает workload_id или -1 при ошибке.
-        /// </summary>
-        private int ResolveWorkloadId(int subjectId, int teacherId)
+        private int ResolveWorkloadId(int subjectParallelId, int teacherId)
         {
             try
             {
-                // Ищем существующую запись нагрузки
                 DataTable dt = DbHelper.Query(
-                    "SELECT workload_id FROM Workload " +
-                    "WHERE class_id = @c AND subject_id = @s AND teacher_id = @t",
-                    p => {
-                        p.AddWithValue("@c", _classId);
-                        p.AddWithValue("@s", subjectId);
-                        p.AddWithValue("@t", teacherId);
-                    });
+                    "SELECT ID_нагрузки FROM Workload " +
+                    "WHERE ID_класса = @c AND ID_предмета_параллели = @s AND ID_учителя = @t",
+                    p => { p.AddWithValue("@c", _classId);
+                           p.AddWithValue("@s", subjectParallelId);
+                           p.AddWithValue("@t", teacherId); });
 
                 if (dt.Rows.Count > 0)
-                    return Convert.ToInt32(dt.Rows[0]["workload_id"]);
+                    return Convert.ToInt32(dt.Rows[0]["ID_нагрузки"]);
 
-                // Не найдена — создаём новую запись нагрузки
-                // hours_per_week = 0, можно скорректировать во вкладке Нагрузка
-                DbHelper.Execute(
-                    "INSERT INTO Workload (class_id, subject_id, teacher_id, hours_per_week) " +
-                    "VALUES (@c, @s, @t, 0)",
-                    p => {
-                        p.AddWithValue("@c", _classId);
-                        p.AddWithValue("@s", subjectId);
-                        p.AddWithValue("@t", teacherId);
-                    });
+                // Создаём через хранимую процедуру
+                DataTable dt2 = DbHelper.ExecProc("sp_AddWorkload",
+                    p => { p.AddWithValue("@ID_учителя",               teacherId);
+                           p.AddWithValue("@ID_класса",                _classId);
+                           p.AddWithValue("@ID_предмета_параллели",    subjectParallelId);
+                           p.AddWithValue("@Количество_часов_в_неделю", (byte)0); });
 
-                // Получаем ID только что созданной записи
-                DataTable dt2 = DbHelper.Query(
-                    "SELECT TOP 1 workload_id FROM Workload " +
-                    "WHERE class_id = @c AND subject_id = @s AND teacher_id = @t " +
-                    "ORDER BY workload_id DESC",
-                    p => {
-                        p.AddWithValue("@c", _classId);
-                        p.AddWithValue("@s", subjectId);
-                        p.AddWithValue("@t", teacherId);
-                    });
-
-                return dt2.Rows.Count > 0 ? Convert.ToInt32(dt2.Rows[0]["workload_id"]) : -1;
+                return dt2.Rows.Count > 0 ? Convert.ToInt32(dt2.Rows[0]["ID_нагрузки"]) : -1;
             }
-            catch (Exception ex)
-            {
-                DbHelper.ShowError(ex, "Определение нагрузки");
-                return -1;
-            }
+            catch (Exception ex) { DbHelper.ShowError(ex, "Определение нагрузки"); return -1; }
         }
 
-        /// <summary>
-        /// Удаляет урок из расписания после подтверждения.
-        /// </summary>
+        private string CheckDayLimit()
+        {
+            try
+            {
+                DataTable dtCls = DbHelper.Query(
+                    "SELECT CAST(pc.Параллель AS NVARCHAR) + lc.Буква AS class_name " +
+                    "FROM Classes cl " +
+                    "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
+                    "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
+                    "WHERE cl.ID_класса = @cid",
+                    p => p.AddWithValue("@cid", _classId));
+                if (dtCls.Rows.Count == 0) return null;
+
+                string className = dtCls.Rows[0]["class_name"].ToString();
+                int limit = SettingsForm.GetLimit(className);
+
+                string skip = _existing != null
+                    ? " AND s.ID_расписания <> " + _existing["ID_расписания"] : "";
+                DataTable dtCount = DbHelper.Query(
+                    "SELECT COUNT(*) AS cnt FROM Schedule s " +
+                    "JOIN Workload w ON s.ID_нагрузки = w.ID_нагрузки " +
+                    "WHERE w.ID_класса = @cid AND s.ID_дня_недели = @d" + skip,
+                    p => { p.AddWithValue("@cid", _classId); p.AddWithValue("@d", _day); });
+
+                int current = Convert.ToInt32(dtCount.Rows[0]["cnt"]);
+                if (current >= limit)
+                    return string.Format(
+                        "Для класса {0} установлен лимит {1} уроков в день.\n" +
+                        "В этот день уже стоит {2} уроков.", className, limit, current);
+            }
+            catch { }
+            return null;
+        }
+
+        private string CheckTeacherConflict(int teacherId)
+        {
+            string skip = _existing != null
+                ? " AND ID_расписания <> " + _existing["ID_расписания"] : "";
+            bool busy = DbHelper.Exists(
+                "SELECT COUNT(*) FROM vw_Schedule " +
+                "WHERE ID_дня_недели = @d AND Номер_урока = @l AND ID_учителя = @tid" + skip,
+                p => { p.AddWithValue("@tid", teacherId);
+                       p.AddWithValue("@d",   _day);
+                       p.AddWithValue("@l",   _lesson); });
+            return busy ? "Учитель уже ведёт другой урок в это время." : null;
+        }
+
         private void buttonDelete_Click(object sender, EventArgs e)
         {
             if (_existing == null) return;
-
             if (MessageBox.Show("Удалить этот урок из расписания?", "Подтверждение",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
-
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
             try
             {
-                DbHelper.Execute("DELETE FROM Schedule WHERE schedule_id = @id",
-                    p => p.AddWithValue("@id", Convert.ToInt32(_existing["schedule_id"])));
+                DbHelper.ExecProcNonQuery("sp_DeleteLesson",
+                    p => p.AddWithValue("@ID_расписания",
+                         Convert.ToInt32(_existing["ID_расписания"])));
                 DialogResult = DialogResult.OK;
                 Close();
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Удаление урока"); }
-        }
-
-        // ── Быстрое добавление учителя ────────────────────────────────────────
-
-        /// <summary>
-        /// Открывает inline-диалог для быстрого добавления нового учителя
-        /// прямо из формы редактирования урока, без перехода в Справочники.
-        /// После добавления автоматически выбирает нового учителя в списке.
-        /// </summary>
-        private void buttonAddTeacher_Click(object sender, EventArgs e)
-        {
-            using (QuickAddForm dlg = new QuickAddForm("Новый учитель",
-                new[] { "Фамилия", "Имя", "Отчество", "Часов в неделю" }))
-            {
-                if (dlg.ShowDialog(this) != DialogResult.OK) return;
-
-                string surname    = dlg.Values[0].Trim();
-                string firstName  = dlg.Values[1].Trim();
-                string patronymic = dlg.Values[2].Trim();
-                string hours      = dlg.Values[3].Trim();
-
-                if (string.IsNullOrEmpty(surname))
-                {
-                    MessageBox.Show("Введите фамилию учителя.", "Внимание",
-                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                int.TryParse(hours, out int h);
-                string fullName = (surname + " " + firstName + " " + patronymic).Trim();
-
-                try
-                {
-                    DbHelper.Execute(
-                        "INSERT INTO Teachers (surname, name, patronymic, teaching_hours) " +
-                        "VALUES (@s, @n, @p, @h)",
-                        p => {
-                            p.AddWithValue("@s", surname);
-                            p.AddWithValue("@n", firstName);
-                            p.AddWithValue("@p", patronymic);
-                            p.AddWithValue("@h", h);
-                        });
-
-                    // Перезагружаем список и выбираем нового учителя по ФИО
-                    LoadTeachers();
-                    foreach (DataRowView drv in comboTeacher.Items)
-                        if (drv["full_name"].ToString() == fullName)
-                        { comboTeacher.SelectedItem = drv; break; }
-                }
-                catch (Exception ex) { DbHelper.ShowError(ex, "Добавление учителя"); }
-            }
-        }
-
-        // ── Быстрое добавление кабинета ───────────────────────────────────────
-
-        /// <summary>
-        /// Открывает inline-диалог для быстрого добавления нового кабинета
-        /// прямо из формы редактирования урока, без перехода в Справочники.
-        /// После добавления автоматически выбирает новый кабинет в списке.
-        /// </summary>
-        private void buttonAddClassroom_Click(object sender, EventArgs e)
-        {
-            // Загружаем типы кабинетов для выбора
-            DataTable dtTypes = DbHelper.Query(
-                "SELECT type_id, classroom_type FROM ClassroomTypes ORDER BY classroom_type");
-
-            if (dtTypes.Rows.Count == 0)
-            {
-                MessageBox.Show("Сначала добавьте типы кабинетов в Справочниках.",
-                    "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            using (QuickAddClassroomForm dlg = new QuickAddClassroomForm(dtTypes))
-            {
-                if (dlg.ShowDialog(this) != DialogResult.OK) return;
-
-                try
-                {
-                    DbHelper.Execute(
-                        "INSERT INTO Classrooms (room_number, capacity, type_id) VALUES (@r, @c, @t)",
-                        p => {
-                            p.AddWithValue("@r", dlg.RoomNumber);
-                            p.AddWithValue("@c", dlg.Capacity);
-                            p.AddWithValue("@t", dlg.TypeId);
-                        });
-
-                    // Перезагружаем список и выбираем новый кабинет
-                    LoadClassrooms();
-                    foreach (DataRowView drv in comboClassroom.Items)
-                        if (drv["display"].ToString().StartsWith(dlg.RoomNumber.ToString()))
-                        { comboClassroom.SelectedItem = drv; break; }
-                }
-                catch (Exception ex) { DbHelper.ShowError(ex, "Добавление кабинета"); }
-            }
         }
 
         private void buttonCancel_Click(object sender, EventArgs e)
@@ -477,83 +333,54 @@ namespace testing
             Close();
         }
 
-        // ── Проверка конфликтов ───────────────────────────────────────────────
-
-        /// <summary>
-        /// Проверяет занятость учителя и кабинета в указанный слот расписания.
-        /// При редактировании исключает текущую запись из проверки.
-        /// </summary>
-        /// <returns>Текст описания конфликта или null если конфликтов нет.</returns>
-        /// <summary>
-        /// Проверяет не превышен ли лимит уроков в день для этого класса.
-        /// Лимит берётся из настроек (SettingsForm), по умолчанию из реального расписания.
-        /// </summary>
-        private string CheckDayLimit()
+        private void buttonAddTeacher_Click(object sender, EventArgs e)
         {
-            try
+            using (var dlg = new QuickAddForm("Новый учитель",
+                new[] { "Фамилия", "Имя", "Отчество", "Часов в неделю" }))
             {
-                // Получаем название класса
-                DataTable dtCls = DbHelper.Query(
-                    "SELECT CAST(cp.parallel AS NVARCHAR) + lc.letterClass AS class_name " +
-                    "FROM Classes cl " +
-                    "JOIN ClassParallel cp ON cl.id_parallel_class = cp.id_parallel_class " +
-                    "JOIN LetterOfTheClass lc ON cl.id_letter_class = lc.id_letter_class " +
-                    "WHERE cl.class_id = @cid",
-                    p => p.AddWithValue("@cid", _classId));
-
-                if (dtCls.Rows.Count == 0) return null;
-                string className = dtCls.Rows[0]["class_name"].ToString();
-                int limit = SettingsForm.GetLimit(className);
-
-                // Считаем сколько уроков уже стоит в этот день
-                // При редактировании исключаем текущий урок
-                string skipClause = _existing != null
-                    ? " AND s.schedule_id <> " + _existing["schedule_id"]
-                    : "";
-
-                DataTable dtCount = DbHelper.Query(
-                    "SELECT COUNT(*) AS cnt FROM Schedule s " +
-                    "JOIN Workload w ON s.workload_id = w.workload_id " +
-                    "WHERE w.class_id = @cid AND s.day_of_week = @d" + skipClause,
-                    p => {
-                        p.AddWithValue("@cid", _classId);
-                        p.AddWithValue("@d",   _day);
-                    });
-
-                int current = Convert.ToInt32(dtCount.Rows[0]["cnt"]);
-
-                if (current >= limit)
-                    return string.Format(
-                        "Для класса {0} установлен лимит {1} уроков в день.\n" +
-                        "В этот день уже стоит {2} уроков.",
-                        className, limit, current);
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                string surname = dlg.Values[0].Trim();
+                string name    = dlg.Values[1].Trim();
+                string patr    = dlg.Values[2].Trim();
+                if (string.IsNullOrEmpty(surname)) return;
+                decimal hours  = 0;
+                decimal.TryParse(dlg.Values[3], out hours);
+                try
+                {
+                    DbHelper.ExecProcNonQuery("sp_AddTeacher",
+                        p => { p.AddWithValue("@Фамилия",  surname);
+                               p.AddWithValue("@Имя",      name);
+                               p.AddWithValue("@Отчество", patr);
+                               p.AddWithValue("@Ставка",   hours > 0 ? hours : 1m); });
+                    LoadTeachers();
+                    string fullName = surname + " " + name + " " + patr;
+                    foreach (DataRowView drv in comboTeacher.Items)
+                        if (drv["full_name"].ToString().StartsWith(surname))
+                        { comboTeacher.SelectedItem = drv; break; }
+                }
+                catch (Exception ex) { DbHelper.ShowError(ex, "Добавление учителя"); }
             }
-            catch { }
-            return null;
         }
 
-        private string CheckConflicts(int workloadId, int classroomId)
+        private void buttonAddClassroom_Click(object sender, EventArgs e)
         {
-            string skipClause = _existing != null
-                ? " AND s.schedule_id <> " + _existing["schedule_id"]
-                : "";
+            DataTable dtTypes = DbHelper.Query(
+                "SELECT ID_типа_кабинета, Тип_кабинета FROM ClassroomTypes ORDER BY Тип_кабинета");
+            if (dtTypes.Rows.Count == 0) { MessageBox.Show("Нет типов кабинетов."); return; }
 
-            // Проверяем только занятость учителя
-            // Занятость кабинета контролируется триггером UQ_Classroom_Time на уровне БД
-            bool teacherBusy = DbHelper.Exists(
-                "SELECT COUNT(*) FROM Schedule s " +
-                "JOIN Workload w  ON s.workload_id  = w.workload_id " +
-                "JOIN Workload w2 ON w2.workload_id = @wid " +
-                "WHERE s.day_of_week = @d AND s.lesson_number = @l " +
-                "AND w.teacher_id = w2.teacher_id" + skipClause,
-                p => {
-                    p.AddWithValue("@wid", workloadId);
-                    p.AddWithValue("@d",   _day);
-                    p.AddWithValue("@l",   _lesson);
-                });
-
-            if (teacherBusy) return "Учитель уже ведёт другой урок в это время.";
-            return null;
+            using (var dlg = new QuickAddClassroomForm(dtTypes))
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    DbHelper.ExecProcNonQuery("sp_AddClassroom",
+                        p => { p.AddWithValue("@Номер",            dlg.RoomNumber);
+                               p.AddWithValue("@Вместимость",      dlg.Capacity > 0 ? dlg.Capacity : 30);
+                               p.AddWithValue("@ID_типа_кабинета", dlg.TypeId); });
+                    LoadClassrooms();
+                }
+                catch (Exception ex) { DbHelper.ShowError(ex, "Добавление кабинета"); }
+            }
         }
     }
 }
