@@ -40,9 +40,10 @@ namespace testing
         {
             try
             {
+                // Используем CONVERT вместо CAST для совместимости с collation
                 DataTable dtClass = DbHelper.Query(
                     "SELECT ID_класса AS class_id, " +
-                    "CAST(pc.Параллель AS NVARCHAR) + lc.Буква AS name " +
+                    "CONVERT(NVARCHAR, pc.Параллель) + lc.Буква AS name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
@@ -51,14 +52,15 @@ namespace testing
                 comboClass.ValueMember   = "class_id";
                 comboClass.DataSource    = dtClass;
 
+                // Упрощённый список: только название предмета + параллель
                 DataTable dtSubject = DbHelper.Query(
-                    "SELECT ID_предмета_со_сложностью AS subject_id, " +
-                    "sub.Название + ' (пар.' + CAST(pc.Параллель AS NVARCHAR) + ', сл.' + " +
-                    "CAST(d.Сложность AS NVARCHAR) + ')' AS name " +
+                    "SELECT sbp.ID_предмета_со_сложностью AS subject_id, " +
+                    "sub.Название + N' (' + CONVERT(NVARCHAR, pc.Параллель) + N' кл., сл.' + " +
+                    "CONVERT(NVARCHAR, d.Сложность) + N')' AS name " +
                     "FROM SubjectByParallel sbp " +
-                    "JOIN Subjects sub ON sbp.ID_предмета = sub.ID_предмета " +
-                    "JOIN ParallelClass pc ON sbp.ID_параллели = pc.ID_параллели_класса " +
-                    "JOIN Difficulty d ON sbp.ID_сложности = d.ID_сложности " +
+                    "JOIN Subjects sub      ON sbp.ID_предмета  = sub.ID_предмета " +
+                    "JOIN ParallelClass pc  ON sbp.ID_параллели = pc.ID_параллели_класса " +
+                    "JOIN Difficulty d      ON sbp.ID_сложности = d.ID_сложности " +
                     "ORDER BY sub.Название, pc.Параллель");
                 comboSubject.DisplayMember = "name";
                 comboSubject.ValueMember   = "subject_id";
@@ -66,7 +68,7 @@ namespace testing
 
                 DataTable dtTeacher = DbHelper.Query(
                     "SELECT ID_учителя AS teacher_id, " +
-                    "Фамилия + ' ' + Имя + ' ' + Отчество AS name " +
+                    "Фамилия + N' ' + Имя + N' ' + Отчество AS name " +
                     "FROM Teachers ORDER BY Фамилия, Имя");
                 comboTeacher.DisplayMember = "name";
                 comboTeacher.ValueMember   = "teacher_id";
