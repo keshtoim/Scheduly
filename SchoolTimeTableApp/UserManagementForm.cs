@@ -80,12 +80,12 @@ namespace testing
             _currentPassword = row["Пароль"].ToString();
             textCurrentPassword.Text         = _currentPassword;
             textCurrentPassword.PasswordChar = '*';
-            buttonShowCurrent.Text           = "👁";
+            buttonShowCurrent.Text           = "Показать";
 
             // Поле нового пароля — очищаем
             textNewPassword.Text         = "";
             textNewPassword.PasswordChar = '*';
-            buttonShowNew.Text           = "👁";
+            buttonShowNew.Text           = "Показать";
 
             // Выбираем текущую роль в комbobox
             string roleName = row["Роль"].ToString();
@@ -110,18 +110,18 @@ namespace testing
         private void buttonShowCurrent_Click(object sender, EventArgs e)
         {
             if (textCurrentPassword.PasswordChar == '*')
-            { textCurrentPassword.PasswordChar = '\0'; buttonShowCurrent.Text = "🙈"; }
+            { textCurrentPassword.PasswordChar = '\0'; buttonShowCurrent.Text = "Скрыть"; }
             else
-            { textCurrentPassword.PasswordChar = '*';  buttonShowCurrent.Text = "👁"; }
+            { textCurrentPassword.PasswordChar = '*';  buttonShowCurrent.Text = "Показать"; }
         }
 
         private void buttonShowNew_Click(object sender, EventArgs e)
         {
             if (textNewPassword.PasswordChar == '*')
-            { textNewPassword.PasswordChar = '\0'; buttonShowNew.Text = "🙈"; }
+            { textNewPassword.PasswordChar = '\0'; buttonShowNew.Text = "Скрыть"; }
             else
             { textNewPassword.PasswordChar = '*';  textNewPassword.Text = textNewPassword.Text;
-              buttonShowNew.Text = "👁"; }
+              buttonShowNew.Text = "Показать"; }
         }
 
         // ── Смена пароля ─────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ namespace testing
                 _currentPassword             = newPwd;
                 textCurrentPassword.Text     = newPwd;
                 textCurrentPassword.PasswordChar = '*';
-                buttonShowCurrent.Text       = "👁";
+                buttonShowCurrent.Text       = "Показать";
                 textNewPassword.Clear();
 
                 MessageBox.Show("Пароль успешно изменён.", "Готово",

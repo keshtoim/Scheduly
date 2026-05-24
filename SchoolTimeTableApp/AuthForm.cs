@@ -54,9 +54,9 @@ namespace testing
         private void buttonShowPassword_Click(object sender, EventArgs e)
         {
             if (textBoxPassword.PasswordChar == '*')
-            { textBoxPassword.PasswordChar = '\0'; buttonShowPassword.Text = "🙈"; }
+            { textBoxPassword.PasswordChar = '\0'; buttonShowPassword.Text = "Скрыть"; }
             else
-            { textBoxPassword.PasswordChar = '*';  buttonShowPassword.Text = "👁"; }
+            { textBoxPassword.PasswordChar = '*';  buttonShowPassword.Text = "Показать"; }
         }
     }
 }

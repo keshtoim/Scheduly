@@ -82,16 +82,16 @@ namespace testing
             this.textCurrentPassword.Name         = "textCurrentPassword";
             this.textCurrentPassword.PasswordChar = '*';
             this.textCurrentPassword.ReadOnly     = true;
-            this.textCurrentPassword.Size         = new System.Drawing.Size(340, 20);
+            this.textCurrentPassword.Size         = new System.Drawing.Size(262, 20);
             this.textCurrentPassword.TabIndex     = 0;
             this.textCurrentPassword.BackColor    = System.Drawing.Color.WhiteSmoke;
             // buttonShowCurrent
             this.buttonShowCurrent.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonShowCurrent.Location  = new System.Drawing.Point(352, 38);
+            this.buttonShowCurrent.Location  = new System.Drawing.Point(274, 38);
             this.buttonShowCurrent.Name      = "buttonShowCurrent";
-            this.buttonShowCurrent.Size      = new System.Drawing.Size(56, 24);
+            this.buttonShowCurrent.Size      = new System.Drawing.Size(72, 24);
             this.buttonShowCurrent.TabIndex  = 1;
-            this.buttonShowCurrent.Text      = "👁";
+            this.buttonShowCurrent.Text      = "Показать";
             this.buttonShowCurrent.UseVisualStyleBackColor = true;
             this.buttonShowCurrent.Click += new System.EventHandler(this.buttonShowCurrent_Click);
             // labelNew
@@ -104,22 +104,22 @@ namespace testing
             this.textNewPassword.Location     = new System.Drawing.Point(6, 88);
             this.textNewPassword.Name         = "textNewPassword";
             this.textNewPassword.PasswordChar = '*';
-            this.textNewPassword.Size         = new System.Drawing.Size(240, 20);
+            this.textNewPassword.Size         = new System.Drawing.Size(196, 20);
             this.textNewPassword.TabIndex     = 2;
             // buttonShowNew
             this.buttonShowNew.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonShowNew.Location  = new System.Drawing.Point(252, 86);
+            this.buttonShowNew.Location  = new System.Drawing.Point(204, 86);
             this.buttonShowNew.Name      = "buttonShowNew";
-            this.buttonShowNew.Size      = new System.Drawing.Size(46, 24);
+            this.buttonShowNew.Size      = new System.Drawing.Size(72, 24);
             this.buttonShowNew.TabIndex  = 3;
-            this.buttonShowNew.Text      = "👁";
+            this.buttonShowNew.Text      = "Показать";
             this.buttonShowNew.UseVisualStyleBackColor = true;
             this.buttonShowNew.Click += new System.EventHandler(this.buttonShowNew_Click);
             // buttonChangePwd
             this.buttonChangePwd.BackColor = System.Drawing.Color.SteelBlue;
             this.buttonChangePwd.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonChangePwd.ForeColor = System.Drawing.Color.White;
-            this.buttonChangePwd.Location  = new System.Drawing.Point(306, 86);
+            this.buttonChangePwd.Location  = new System.Drawing.Point(282, 86);
             this.buttonChangePwd.Name      = "buttonChangePwd";
             this.buttonChangePwd.Size      = new System.Drawing.Size(102, 24);
             this.buttonChangePwd.TabIndex  = 4;
