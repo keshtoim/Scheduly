@@ -3,6 +3,13 @@ using System.Windows.Forms;
 
 namespace testing
 {
+    /// <summary>
+    /// Главное окно. Доступность вкладок и кнопок определяется ролью пользователя:
+    /// — Администратор:        все вкладки, Настройки. Без управления пользователями.
+    /// — Директор:             только просмотр расписания + кнопка Пользователи.
+    /// — Заместитель директора: все вкладки, Настройки.
+    /// — Учитель:              только просмотр расписания.
+    /// </summary>
     public partial class MainForm : Form
     {
         private AppUser _currentUser;
@@ -35,18 +42,33 @@ namespace testing
             tabPageWorkload.Controls.Add(_workload);
             tabPageReferences.Controls.Add(_references);
 
-            labelUserInfo.Text = string.Format("{0}  |  {1}",
-                _currentUser.DisplayName, _currentUser.Role);
-
-            if (!_currentUser.CanEdit)
-            {
-                tabControl.TabPages[TAB_COMPOSE].Enabled    = false;
-                tabControl.TabPages[TAB_WORKLOAD].Enabled   = false;
-                tabControl.TabPages[TAB_REFERENCES].Enabled = false;
-            }
+            ApplyRoleRestrictions();
 
             tabControl.SelectedIndex = TAB_SCHEDULE;
             _viewSchedule.LoadSchedule();
+        }
+
+        /// <summary>
+        /// Применяет ограничения доступа в зависимости от роли пользователя.
+        /// </summary>
+        private void ApplyRoleRestrictions()
+        {
+            labelUserInfo.Text = string.Format("{0}  |  {1}",
+                _currentUser.DisplayName, _currentUser.RoleName);
+
+            bool canEdit         = _currentUser.CanEdit;
+            bool canManageUsers  = _currentUser.CanManageUsers;
+
+            // Вкладки редактирования — только Администратор и Зам. директора
+            tabControl.TabPages[TAB_COMPOSE].Enabled    = canEdit;
+            tabControl.TabPages[TAB_WORKLOAD].Enabled   = canEdit;
+            tabControl.TabPages[TAB_REFERENCES].Enabled = canEdit;
+
+            // Кнопка Настройки — только Администратор и Зам. директора
+            buttonSettings.Visible = canEdit;
+
+            // Кнопка Пользователи — только Директор
+            buttonUsers.Visible = canManageUsers;
         }
 
         private void tabControl_SelectedIndexChanged(object sender, EventArgs e)
@@ -65,21 +87,23 @@ namespace testing
             using (var dlg = new SettingsForm()) dlg.ShowDialog(this);
         }
 
+        private void buttonUsers_Click(object sender, EventArgs e)
+        {
+            using (var dlg = new UserManagementForm(_currentUser))
+                dlg.ShowDialog(this);
+        }
+
         private void buttonLogout_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show("Выйти из системы?", "Выход",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+
             this.Hide();
             var auth = new AuthForm();
             if (auth.ShowDialog() == DialogResult.OK)
             {
                 _currentUser = auth.AuthenticatedUser;
-                labelUserInfo.Text = string.Format("{0}  |  {1}",
-                    _currentUser.DisplayName, _currentUser.Role);
-                bool canEdit = _currentUser.CanEdit;
-                tabControl.TabPages[TAB_COMPOSE].Enabled    = canEdit;
-                tabControl.TabPages[TAB_WORKLOAD].Enabled   = canEdit;
-                tabControl.TabPages[TAB_REFERENCES].Enabled = canEdit;
+                ApplyRoleRestrictions();
                 this.Show();
                 tabControl.SelectedIndex = TAB_SCHEDULE;
                 _viewSchedule?.LoadSchedule();

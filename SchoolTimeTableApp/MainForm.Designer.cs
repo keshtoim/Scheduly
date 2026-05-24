@@ -15,6 +15,7 @@ namespace testing
             this.panelTop = new System.Windows.Forms.Panel();
             this.labelAppTitle = new System.Windows.Forms.Label();
             this.labelUserInfo = new System.Windows.Forms.Label();
+            this.buttonUsers     = new System.Windows.Forms.Button();
             this.buttonSettings = new System.Windows.Forms.Button();
             this.buttonLogout   = new System.Windows.Forms.Button();
             this.tabControl = new System.Windows.Forms.TabControl();
@@ -32,6 +33,7 @@ namespace testing
             // panelTop
             // 
             this.panelTop.BackColor = System.Drawing.Color.SteelBlue;
+            this.panelTop.Controls.Add(this.buttonUsers);
             this.panelTop.Controls.Add(this.buttonSettings);
             this.panelTop.Controls.Add(this.buttonLogout);
             this.panelTop.Controls.Add(this.labelUserInfo);
@@ -67,6 +69,20 @@ namespace testing
             this.labelUserInfo.Size = new System.Drawing.Size(780, 18);
             this.labelUserInfo.TabIndex = 1;
             this.labelUserInfo.Text = "—";
+            // buttonUsers
+            this.buttonUsers.Anchor = ((System.Windows.Forms.AnchorStyles)(
+                System.Windows.Forms.AnchorStyles.Top |
+                System.Windows.Forms.AnchorStyles.Right));
+            this.buttonUsers.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonUsers.ForeColor = System.Drawing.Color.White;
+            this.buttonUsers.Location = new System.Drawing.Point(862, 9);
+            this.buttonUsers.Name = "buttonUsers";
+            this.buttonUsers.Size = new System.Drawing.Size(106, 26);
+            this.buttonUsers.TabIndex = 3;
+            this.buttonUsers.Text = "👤 Пользователи";
+            this.buttonUsers.UseVisualStyleBackColor = false;
+            this.buttonUsers.Visible = false;
+            this.buttonUsers.Click += new System.EventHandler(this.buttonUsers_Click);
             // 
             // buttonSettings
             // 
@@ -188,6 +204,7 @@ namespace testing
         private System.Windows.Forms.Panel panelTop;
         private System.Windows.Forms.Label labelAppTitle;
         private System.Windows.Forms.Label labelUserInfo;
+        private System.Windows.Forms.Button buttonUsers;
         private System.Windows.Forms.Button buttonSettings;
         private System.Windows.Forms.Button buttonLogout;
         private System.Windows.Forms.TabControl tabControl;

@@ -1,57 +1,145 @@
-using System.Collections.Generic;
+using System;
+using System.Data;
 
 namespace testing
 {
     /// <summary>
-    /// Роли пользователей приложения.
-    /// Admin и Director имеют полный доступ, Teacher — только просмотр.
+    /// Роли пользователей системы (соответствуют таблице Roles в БД).
     /// </summary>
-    public enum UserRole { Admin, Director, Teacher }
-
-    /// <summary>
-    /// Модель пользователя приложения.
-    /// </summary>
-    public class AppUser
+    public enum UserRole
     {
-        /// <summary>Логин для входа.</summary>
-        public string Login       { get; set; }
-        /// <summary>Пароль.</summary>
-        public string Password    { get; set; }
-        /// <summary>Роль пользователя.</summary>
-        public UserRole Role      { get; set; }
-        /// <summary>Имя отображаемое в шапке приложения.</summary>
-        public string DisplayName { get; set; }
-
-        /// <summary>
-        /// Возвращает true если пользователь имеет право редактировать данные.
-        /// </summary>
-        public bool CanEdit => Role == UserRole.Admin || Role == UserRole.Director;
+        Администратор        = 1,
+        Директор             = 2,
+        ЗаместительДиректора = 3,
+        Учитель              = 4
     }
 
     /// <summary>
-    /// Статический список пользователей приложения.
-    /// Пользователи хранятся в памяти — БД для авторизации не используется.
+    /// Модель авторизованного пользователя.
+    /// </summary>
+    public class AppUser
+    {
+        public int      Id          { get; set; }
+        public string   Login       { get; set; }
+        public string   DisplayName { get; set; }
+        public UserRole Role        { get; set; }
+        public string   RoleName    { get; set; }
+
+        /// <summary>Может редактировать расписание, нагрузку и справочники.</summary>
+        public bool CanEdit =>
+            Role == UserRole.Администратор ||
+            Role == UserRole.ЗаместительДиректора;
+
+        /// <summary>Может просматривать расписание.</summary>
+        public bool CanView => true;
+
+        /// <summary>Может управлять пользователями и менять пароли.</summary>
+        public bool CanManageUsers => Role == UserRole.Директор;
+
+        /// <summary>Имеет полный доступ к БД (добавление/удаление таблиц и т.д.).</summary>
+        public bool CanManageDatabase => Role == UserRole.Администратор;
+    }
+
+    /// <summary>
+    /// Авторизация через таблицу Users в БД.
     /// </summary>
     public static class AppUsers
     {
-        /// <summary>Список всех доступных учётных записей.</summary>
-        public static readonly List<AppUser> Users = new List<AppUser>
-        {
-            new AppUser { Login = "admin",    Password = "admin123",    Role = UserRole.Admin,    DisplayName = "Администратор" },
-            new AppUser { Login = "director", Password = "director123", Role = UserRole.Director, DisplayName = "Директор"      },
-            new AppUser { Login = "teacher",  Password = "teacher123",  Role = UserRole.Teacher,  DisplayName = "Учитель"       }
-        };
-
         /// <summary>
-        /// Проверяет логин и пароль.
+        /// Проверяет логин и пароль по таблице Users в БД.
+        /// Возвращает AppUser при успехе, null при неверных данных.
         /// </summary>
-        /// <returns>Объект AppUser при успехе, null если данные неверны.</returns>
         public static AppUser Authenticate(string login, string password)
         {
-            foreach (AppUser u in Users)
-                if (u.Login == login && u.Password == password)
-                    return u;
-            return null;
+            try
+            {
+                DataTable dt = DbHelper.Query(
+                    "SELECT u.ID_пользователя, u.Логин, u.Отображаемое_имя, " +
+                    "u.ID_роли, r.Название AS Роль " +
+                    "FROM Users u " +
+                    "JOIN Roles r ON u.ID_роли = r.ID_роли " +
+                    "WHERE u.Логин = @login AND u.Пароль = @pwd AND u.Активен = 1",
+                    p => {
+                        p.AddWithValue("@login", login);
+                        p.AddWithValue("@pwd",   password);
+                    });
+
+                if (dt.Rows.Count == 0) return null;
+
+                DataRow row = dt.Rows[0];
+                int roleId = Convert.ToInt32(row["ID_роли"]);
+
+                return new AppUser
+                {
+                    Id          = Convert.ToInt32(row["ID_пользователя"]),
+                    Login       = row["Логин"].ToString(),
+                    DisplayName = row["Отображаемое_имя"].ToString(),
+                    RoleName    = row["Роль"].ToString(),
+                    Role        = (UserRole)roleId,
+                };
+            }
+            catch (Exception ex)
+            {
+                DbHelper.ShowError(ex, "Ошибка авторизации");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Меняет пароль пользователя. Доступно только Директору.
+        /// </summary>
+        public static bool ChangePassword(int userId, string newPassword)
+        {
+            try
+            {
+                int rows = DbHelper.Execute(
+                    "UPDATE Users SET Пароль = @pwd WHERE ID_пользователя = @id",
+                    p => {
+                        p.AddWithValue("@pwd", newPassword);
+                        p.AddWithValue("@id",  userId);
+                    });
+                return rows > 0;
+            }
+            catch { return false; }
+        }
+
+        /// <summary>
+        /// Загружает список всех активных пользователей с ролями.
+        /// </summary>
+        public static DataTable GetAllUsers()
+        {
+            return DbHelper.Query(
+                "SELECT u.ID_пользователя, u.Логин, u.Отображаемое_имя, " +
+                "r.Название AS Роль, u.Активен " +
+                "FROM Users u JOIN Roles r ON u.ID_роли = r.ID_роли " +
+                "ORDER BY r.ID_роли, u.Отображаемое_имя");
+        }
+
+        /// <summary>
+        /// Загружает список ролей из БД.
+        /// </summary>
+        public static DataTable GetAllRoles()
+        {
+            return DbHelper.Query(
+                "SELECT ID_роли, Название FROM Roles ORDER BY ID_роли");
+        }
+
+        /// <summary>
+        /// Меняет роль пользователя. Доступно только Директору.
+        /// </summary>
+        public static bool ChangeRole(int userId, int roleId)
+        {
+            try
+            {
+                int rows = DbHelper.Execute(
+                    "UPDATE Users SET ID_роли = @rid WHERE ID_пользователя = @id",
+                    p => {
+                        p.AddWithValue("@rid", roleId);
+                        p.AddWithValue("@id",  userId);
+                    });
+                return rows > 0;
+            }
+            catch { return false; }
         }
     }
 }

@@ -134,6 +134,8 @@
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
     <!-- ── UserControls ── -->
+    <Compile Include="UserManagementForm.cs" />
+    <Compile Include="UserManagementForm.Designer.cs" />
     <Compile Include="ViewScheduleControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
