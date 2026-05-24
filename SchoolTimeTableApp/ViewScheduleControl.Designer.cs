@@ -27,6 +27,8 @@ namespace testing
             this.textSearch        = new System.Windows.Forms.TextBox();
             this.buttonSearch      = new System.Windows.Forms.Button();
             this.labelSearchHint   = new System.Windows.Forms.Label();
+            this.labelLevel        = new System.Windows.Forms.Label();
+            this.comboLevel        = new System.Windows.Forms.ComboBox();
             this.dataGrid          = new System.Windows.Forms.DataGridView();
             this.panelFilters.SuspendLayout();
             this.panelSearch.SuspendLayout();
