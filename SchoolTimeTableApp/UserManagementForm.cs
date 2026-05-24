@@ -5,12 +5,14 @@ using System.Windows.Forms;
 namespace testing
 {
     /// <summary>
-    /// Форма управления пользователями системы.
-    /// Доступна только Директору: смена пароля и назначение роли Администратора.
+    /// Форма управления пользователями (только для Директора).
+    /// При выборе пользователя показывает его текущий пароль (скрытый),
+    /// позволяет его отобразить и изменить, а также сменить роль.
     /// </summary>
     public partial class UserManagementForm : Form
     {
         private readonly AppUser _currentUser;
+        private string _currentPassword = "";  // текущий пароль выбранного юзера
 
         public UserManagementForm(AppUser currentUser)
         {
@@ -22,15 +24,28 @@ namespace testing
         {
             LoadUsers();
             LoadRoles();
+            ClearPasswordPanel();
         }
+
+        // ── Загрузка ─────────────────────────────────────────────────────────
 
         private void LoadUsers()
         {
             try
             {
-                dataGridUsers.DataSource = AppUsers.GetAllUsers();
+                // Загружаем с паролем чтобы показывать его при выборе
+                DataTable dt = DbHelper.Query(
+                    "SELECT u.ID_пользователя, u.Логин, u.Отображаемое_имя, " +
+                    "r.Название AS Роль, u.Пароль, u.Активен " +
+                    "FROM Users u JOIN Roles r ON u.ID_роли = r.ID_роли " +
+                    "ORDER BY r.ID_роли, u.Отображаемое_имя");
+
+                dataGridUsers.DataSource = dt;
+
                 if (dataGridUsers.Columns.Contains("ID_пользователя"))
                     dataGridUsers.Columns["ID_пользователя"].Visible = false;
+                if (dataGridUsers.Columns.Contains("Пароль"))
+                    dataGridUsers.Columns["Пароль"].Visible = false;
                 if (dataGridUsers.Columns.Contains("Активен"))
                     dataGridUsers.Columns["Активен"].Visible = false;
             }
@@ -49,16 +64,68 @@ namespace testing
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка ролей"); }
         }
 
-        private int GetSelectedUserId()
+        // ── Выбор пользователя ───────────────────────────────────────────────
+
+        private void dataGridUsers_SelectionChanged(object sender, EventArgs e)
         {
-            if (dataGridUsers.CurrentRow == null) return -1;
-            if (!(dataGridUsers.DataSource is DataTable dt)) return -1;
-            return Convert.ToInt32(dt.Rows[dataGridUsers.CurrentRow.Index]["ID_пользователя"]);
+            if (dataGridUsers.CurrentRow == null ||
+                !(dataGridUsers.DataSource is DataTable dt)) return;
+
+            int idx = dataGridUsers.CurrentRow.Index;
+            if (idx < 0 || idx >= dt.Rows.Count) return;
+
+            DataRow row = dt.Rows[idx];
+
+            // Показываем текущий пароль скрытым
+            _currentPassword = row["Пароль"].ToString();
+            textCurrentPassword.Text         = _currentPassword;
+            textCurrentPassword.PasswordChar = '*';
+            buttonShowCurrent.Text           = "👁";
+
+            // Поле нового пароля — очищаем
+            textNewPassword.Text         = "";
+            textNewPassword.PasswordChar = '*';
+            buttonShowNew.Text           = "👁";
+
+            // Выбираем текущую роль в комbobox
+            string roleName = row["Роль"].ToString();
+            foreach (DataRowView drv in comboRole.Items)
+                if (drv["Название"].ToString() == roleName)
+                { comboRole.SelectedItem = drv; break; }
+
+            groupPassword.Text = string.Format(
+                "Пароль пользователя: {0}", row["Логин"]);
         }
 
-        /// <summary>
-        /// Смена пароля выбранному пользователю (только для Директора).
-        /// </summary>
+        private void ClearPasswordPanel()
+        {
+            _currentPassword             = "";
+            textCurrentPassword.Text     = "";
+            textNewPassword.Text         = "";
+            groupPassword.Text           = "Выберите пользователя";
+        }
+
+        // ── Показ/скрытие паролей ────────────────────────────────────────────
+
+        private void buttonShowCurrent_Click(object sender, EventArgs e)
+        {
+            if (textCurrentPassword.PasswordChar == '*')
+            { textCurrentPassword.PasswordChar = '\0'; buttonShowCurrent.Text = "🙈"; }
+            else
+            { textCurrentPassword.PasswordChar = '*';  buttonShowCurrent.Text = "👁"; }
+        }
+
+        private void buttonShowNew_Click(object sender, EventArgs e)
+        {
+            if (textNewPassword.PasswordChar == '*')
+            { textNewPassword.PasswordChar = '\0'; buttonShowNew.Text = "🙈"; }
+            else
+            { textNewPassword.PasswordChar = '*';  textNewPassword.Text = textNewPassword.Text;
+              buttonShowNew.Text = "👁"; }
+        }
+
+        // ── Смена пароля ─────────────────────────────────────────────────────
+
         private void buttonChangePassword_Click(object sender, EventArgs e)
         {
             int userId = GetSelectedUserId();
@@ -72,40 +139,48 @@ namespace testing
             string newPwd = textNewPassword.Text.Trim();
             if (string.IsNullOrEmpty(newPwd) || newPwd.Length < 4)
             {
-                MessageBox.Show("Введите новый пароль (не менее 4 символов).", "Внимание",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Введите новый пароль (не менее 4 символов).",
+                    "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
+            if (MessageBox.Show("Изменить пароль пользователя?", "Подтверждение",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+
             if (AppUsers.ChangePassword(userId, newPwd))
             {
+                // Обновляем отображаемый текущий пароль
+                _currentPassword             = newPwd;
+                textCurrentPassword.Text     = newPwd;
+                textCurrentPassword.PasswordChar = '*';
+                buttonShowCurrent.Text       = "👁";
+                textNewPassword.Clear();
+
                 MessageBox.Show("Пароль успешно изменён.", "Готово",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
-                textNewPassword.Clear();
+                LoadUsers();
             }
             else
                 MessageBox.Show("Не удалось изменить пароль.", "Ошибка",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        /// <summary>
-        /// Смена роли выбранному пользователю.
-        /// </summary>
+        // ── Смена роли ───────────────────────────────────────────────────────
+
         private void buttonChangeRole_Click(object sender, EventArgs e)
         {
             int userId = GetSelectedUserId();
-            if (userId < 0)
+            if (userId < 0 || comboRole.SelectedValue == null)
             {
-                MessageBox.Show("Выберите пользователя.", "Внимание",
+                MessageBox.Show("Выберите пользователя и роль.", "Внимание",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (comboRole.SelectedValue == null) return;
             int roleId = Convert.ToInt32(comboRole.SelectedValue);
 
             if (MessageBox.Show(
-                string.Format("Изменить роль пользователя на «{0}»?", comboRole.Text),
+                string.Format("Назначить роль «{0}»?", comboRole.Text),
                 "Подтверждение", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
                 != DialogResult.Yes) return;
 
@@ -118,6 +193,17 @@ namespace testing
             else
                 MessageBox.Show("Не удалось изменить роль.", "Ошибка",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+
+        // ── Вспомогательные ─────────────────────────────────────────────────
+
+        private int GetSelectedUserId()
+        {
+            if (dataGridUsers.CurrentRow == null) return -1;
+            if (!(dataGridUsers.DataSource is DataTable dt)) return -1;
+            int idx = dataGridUsers.CurrentRow.Index;
+            if (idx < 0 || idx >= dt.Rows.Count) return -1;
+            return Convert.ToInt32(dt.Rows[idx]["ID_пользователя"]);
         }
 
         private void buttonClose_Click(object sender, EventArgs e) { Close(); }
