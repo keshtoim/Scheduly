@@ -42,6 +42,8 @@ namespace testing
             this.panelFilters.Controls.Add(this.comboTeacher);
             this.panelFilters.Controls.Add(this.labelDay);
             this.panelFilters.Controls.Add(this.comboDayFilter);
+            this.panelFilters.Controls.Add(this.labelLevel);
+            this.panelFilters.Controls.Add(this.comboLevel);
             this.panelFilters.Controls.Add(this.buttonApplyFilter);
             this.panelFilters.Controls.Add(this.buttonResetFilter);
             this.panelFilters.Controls.Add(this.buttonExport);
@@ -87,25 +89,37 @@ namespace testing
             this.comboDayFilter.Location = new System.Drawing.Point(528, 10);
             this.comboDayFilter.Name = "comboDayFilter";
             this.comboDayFilter.SelectedIndex = 0;
-            this.comboDayFilter.Size = new System.Drawing.Size(150, 21);
+            this.comboDayFilter.Size = new System.Drawing.Size(130, 21);
             this.comboDayFilter.TabIndex = 5;
+            // labelLevel
+            this.labelLevel.AutoSize = true;
+            this.labelLevel.Location = new System.Drawing.Point(670, 14);
+            this.labelLevel.Name = "labelLevel"; this.labelLevel.TabIndex = 6;
+            this.labelLevel.Text = "Ступень:";
+            // comboLevel
+            this.comboLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboLevel.FormattingEnabled = true;
+            this.comboLevel.Location = new System.Drawing.Point(722, 10);
+            this.comboLevel.Name = "comboLevel";
+            this.comboLevel.Size = new System.Drawing.Size(180, 21);
+            this.comboLevel.TabIndex = 7;
             // buttonApplyFilter
             this.buttonApplyFilter.BackColor = System.Drawing.Color.SteelBlue;
             this.buttonApplyFilter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonApplyFilter.ForeColor = System.Drawing.Color.White;
-            this.buttonApplyFilter.Location = new System.Drawing.Point(694, 9);
+            this.buttonApplyFilter.Location = new System.Drawing.Point(914, 9);
             this.buttonApplyFilter.Name = "buttonApplyFilter";
-            this.buttonApplyFilter.Size = new System.Drawing.Size(110, 26);
-            this.buttonApplyFilter.TabIndex = 6;
+            this.buttonApplyFilter.Size = new System.Drawing.Size(100, 26);
+            this.buttonApplyFilter.TabIndex = 8;
             this.buttonApplyFilter.Text = "Применить";
             this.buttonApplyFilter.UseVisualStyleBackColor = false;
             this.buttonApplyFilter.Click += new System.EventHandler(this.buttonApplyFilter_Click);
             // buttonResetFilter
             this.buttonResetFilter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonResetFilter.Location = new System.Drawing.Point(812, 9);
+            this.buttonResetFilter.Location = new System.Drawing.Point(1022, 9);
             this.buttonResetFilter.Name = "buttonResetFilter";
-            this.buttonResetFilter.Size = new System.Drawing.Size(100, 26);
-            this.buttonResetFilter.TabIndex = 7;
+            this.buttonResetFilter.Size = new System.Drawing.Size(80, 26);
+            this.buttonResetFilter.TabIndex = 9;
             this.buttonResetFilter.Text = "Сбросить";
             this.buttonResetFilter.UseVisualStyleBackColor = true;
             this.buttonResetFilter.Click += new System.EventHandler(this.buttonResetFilter_Click);
@@ -211,6 +225,8 @@ namespace testing
         private System.Windows.Forms.ComboBox   comboTeacher;
         private System.Windows.Forms.Label      labelDay;
         private System.Windows.Forms.ComboBox   comboDayFilter;
+        private System.Windows.Forms.Label      labelLevel;
+        private System.Windows.Forms.ComboBox   comboLevel;
         private System.Windows.Forms.Button     buttonApplyFilter;
         private System.Windows.Forms.Button     buttonResetFilter;
         private System.Windows.Forms.Button     buttonExport;

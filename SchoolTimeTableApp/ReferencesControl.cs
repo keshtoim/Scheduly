@@ -167,6 +167,45 @@ namespace testing
             catch (Exception ex) { DbHelper.ShowError(ex); }
         }
 
+        private void buttonAddLetter_Click(object sender, EventArgs e)
+        {
+            string letter = txtNewLetter.Text.Trim().ToUpper();
+            if (string.IsNullOrEmpty(letter) || letter.Length != 1)
+            {
+                MessageBox.Show("Введите одну заглавную букву кириллицы.",
+                    "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            // Проверяем что это кириллица
+            if (letter[0] < 'А' || letter[0] > 'Я')
+            {
+                MessageBox.Show("Допустимы только заглавные буквы кириллицы (А-Я).",
+                    "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            try
+            {
+                // Проверяем что такая буква ещё не существует
+                bool exists = DbHelper.Exists(
+                    "SELECT COUNT(*) FROM LetterClass WHERE Буква = @b",
+                    p => p.AddWithValue("@b", letter));
+                if (exists)
+                {
+                    MessageBox.Show(string.Format("Буква «{0}» уже есть в справочнике.", letter),
+                        "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                DbHelper.Execute(
+                    "INSERT INTO LetterClass (Буква) VALUES (@b)",
+                    p => p.AddWithValue("@b", letter));
+                txtNewLetter.Clear();
+                LoadClasses(); // обновит и comboLetter
+                MessageBox.Show(string.Format("Буква «{0}» добавлена.", letter),
+                    "Готово", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex) { DbHelper.ShowError(ex, "Добавление буквы"); }
+        }
+
         private void buttonDeleteClass_Click(object sender, EventArgs e)
         {
             DeleteSelected(gridClasses, "Classes", "ID_класса", LoadClasses);

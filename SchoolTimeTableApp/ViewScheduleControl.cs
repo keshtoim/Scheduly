@@ -27,7 +27,7 @@ namespace testing
             {
                 DataTable dtClass = DbHelper.Query(
                     "SELECT ID_класса AS class_id, " +
-                    "CAST(pc.Параллель AS NVARCHAR) + lc.Буква AS class_name " +
+                    "CONVERT(NVARCHAR, pc.Параллель) + lc.Буква AS class_name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
@@ -49,8 +49,30 @@ namespace testing
                 comboTeacher.DisplayMember = "full_name";
                 comboTeacher.ValueMember   = "teacher_id";
                 comboTeacher.DataSource    = dtTeacher;
+
+                // Фильтр по ступени обучения
+                comboLevel.Items.Clear();
+                comboLevel.Items.Add("Все ступени");
+                comboLevel.Items.Add("Начальная школа (1–4)");
+                comboLevel.Items.Add("Основная школа (5–9)");
+                comboLevel.Items.Add("Средняя школа (10–11)");
+                comboLevel.SelectedIndex = 0;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка фильтров"); }
+        }
+
+        /// <summary>
+        /// Возвращает SQL-условие для фильтра по ступени обучения.
+        /// </summary>
+        private string GetLevelFilter()
+        {
+            switch (comboLevel.SelectedIndex)
+            {
+                case 1: return " AND pc.Параллель BETWEEN 1 AND 4";
+                case 2: return " AND pc.Параллель BETWEEN 5 AND 9";
+                case 3: return " AND pc.Параллель BETWEEN 10 AND 11";
+                default: return "";
+            }
         }
 
         private void RebuildGrid()
@@ -144,12 +166,13 @@ namespace testing
             try
             {
                 DataTable classes = DbHelper.Query(
-                    "SELECT ID_класса AS class_id, " +
-                    "CAST(pc.Параллель AS NVARCHAR) + lc.Буква AS class_name " +
+                    "SELECT cl.ID_класса AS class_id, " +
+                    "CONVERT(NVARCHAR, pc.Параллель) + lc.Буква AS class_name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
-                    "ORDER BY pc.Параллель, lc.Буква");
+                    "WHERE 1=1" + GetLevelFilter() +
+                    " ORDER BY pc.Параллель, lc.Буква");
 
                 DataTable conflicts = GetAllConflicts();
 
@@ -234,6 +257,7 @@ namespace testing
             comboClass.SelectedIndex     = 0;
             comboTeacher.SelectedIndex   = 0;
             comboDayFilter.SelectedIndex = 0;
+            comboLevel.SelectedIndex     = 0;
             textSearch.Clear();
             RebuildGrid();
         }

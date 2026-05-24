@@ -48,13 +48,16 @@ namespace testing
             // ── Classes tab ──
             this.tabClasses = new System.Windows.Forms.TabPage();
             this.panelClass = new System.Windows.Forms.Panel();
-            this.labelParallel = new System.Windows.Forms.Label();
-            this.comboParallel = new System.Windows.Forms.ComboBox();
-            this.labelLetter = new System.Windows.Forms.Label();
-            this.comboLetter = new System.Windows.Forms.ComboBox();
-            this.buttonAddClass = new System.Windows.Forms.Button();
+            this.labelParallel   = new System.Windows.Forms.Label();
+            this.comboParallel   = new System.Windows.Forms.ComboBox();
+            this.labelLetter     = new System.Windows.Forms.Label();
+            this.comboLetter     = new System.Windows.Forms.ComboBox();
+            this.labelNewLetter  = new System.Windows.Forms.Label();
+            this.txtNewLetter    = new System.Windows.Forms.TextBox();
+            this.buttonAddLetter = new System.Windows.Forms.Button();
+            this.buttonAddClass  = new System.Windows.Forms.Button();
             this.buttonDeleteClass = new System.Windows.Forms.Button();
-            this.gridClasses = new System.Windows.Forms.DataGridView();
+            this.gridClasses     = new System.Windows.Forms.DataGridView();
 
             this.tabControl.SuspendLayout();
             this.tabTeachers.SuspendLayout(); this.panelTeacher.SuspendLayout();
@@ -257,6 +260,33 @@ namespace testing
             this.buttonDeleteClass.Size = new System.Drawing.Size(100, 26); this.buttonDeleteClass.TabIndex = 5;
             this.buttonDeleteClass.Text = "Удалить"; this.buttonDeleteClass.UseVisualStyleBackColor = true;
             this.buttonDeleteClass.Click += new System.EventHandler(this.buttonDeleteClass_Click);
+            // Разделитель
+            var sepClass = new System.Windows.Forms.Label();
+            sepClass.AutoSize = false; sepClass.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            sepClass.Location = new System.Drawing.Point(522, 9); sepClass.Size = new System.Drawing.Size(2, 26);
+            this.panelClass.Controls.Add(sepClass);
+            // Новая буква класса
+            this.labelNewLetter.AutoSize = true;
+            this.labelNewLetter.Location = new System.Drawing.Point(534, 14);
+            this.labelNewLetter.Name = "labelNewLetter"; this.labelNewLetter.TabIndex = 6;
+            this.labelNewLetter.Text = "Добавить букву:";
+            this.txtNewLetter.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
+            this.txtNewLetter.Location = new System.Drawing.Point(636, 11);
+            this.txtNewLetter.MaxLength = 1;
+            this.txtNewLetter.Name = "txtNewLetter";
+            this.txtNewLetter.Size = new System.Drawing.Size(36, 20); this.txtNewLetter.TabIndex = 7;
+            this.buttonAddLetter.BackColor = System.Drawing.Color.SeaGreen;
+            this.buttonAddLetter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonAddLetter.ForeColor = System.Drawing.Color.White;
+            this.buttonAddLetter.Location = new System.Drawing.Point(680, 9);
+            this.buttonAddLetter.Name = "buttonAddLetter";
+            this.buttonAddLetter.Size = new System.Drawing.Size(130, 26); this.buttonAddLetter.TabIndex = 8;
+            this.buttonAddLetter.Text = "+ Добавить букву";
+            this.buttonAddLetter.UseVisualStyleBackColor = false;
+            this.buttonAddLetter.Click += new System.EventHandler(this.buttonAddLetter_Click);
+            this.panelClass.Controls.Add(this.labelNewLetter);
+            this.panelClass.Controls.Add(this.txtNewLetter);
+            this.panelClass.Controls.Add(this.buttonAddLetter);
 
             this.gridClasses.AllowUserToAddRows = false; this.gridClasses.AllowUserToDeleteRows = false;
             this.gridClasses.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -323,6 +353,9 @@ namespace testing
         private System.Windows.Forms.ComboBox comboLetter;
         private System.Windows.Forms.Button buttonAddClass;
         private System.Windows.Forms.Button buttonDeleteClass;
+        private System.Windows.Forms.Label labelNewLetter;
+        private System.Windows.Forms.TextBox txtNewLetter;
+        private System.Windows.Forms.Button buttonAddLetter;
         private System.Windows.Forms.DataGridView gridClasses;
     }
 }
