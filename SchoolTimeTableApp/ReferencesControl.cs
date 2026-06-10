@@ -54,6 +54,35 @@ namespace testing
             DeleteSelected(gridTeachers, "Teachers", "ID_учителя", LoadTeachers);
         }
 
+        private void buttonEditTeacher_Click(object sender, EventArgs e)
+        {
+            if (gridTeachers.CurrentRow == null) return;
+            var dt = gridTeachers.DataSource as DataTable;
+            if (dt == null) return;
+            var row = dt.Rows[gridTeachers.CurrentRow.Index];
+            int id = Convert.ToInt32(row["ID_учителя"]);
+            using (var dlg = new QuickAddForm("Изменить учителя",
+                new[] { "Фамилия", "Имя", "Отчество", "Часов в неделю" },
+                new[] { row["Фамилия"].ToString(), row["Имя"].ToString(),
+                        row["Отчество"].ToString(), row["Часов"].ToString() }))
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                decimal hours = 0; decimal.TryParse(dlg.Values[3], out hours);
+                try
+                {
+                    DbHelper.Execute(
+                        "UPDATE Teachers SET Фамилия=@f, Имя=@n, Отчество=@p, Ставка=@h WHERE ID_учителя=@id",
+                        p => { p.AddWithValue("@f", dlg.Values[0].Trim());
+                               p.AddWithValue("@n", dlg.Values[1].Trim());
+                               p.AddWithValue("@p", dlg.Values[2].Trim());
+                               p.AddWithValue("@h", hours > 0 ? hours : 1m);
+                               p.AddWithValue("@id", id); });
+                    LoadTeachers();
+                }
+                catch (Exception ex) { DbHelper.ShowError(ex); }
+            }
+        }
+
         // ── Предметы ────────────────────────────────────────────────────────
         private void LoadSubjects()
         {
@@ -81,6 +110,31 @@ namespace testing
         private void buttonDeleteSubject_Click(object sender, EventArgs e)
         {
             DeleteSelected(gridSubjects, "Subjects", "ID_предмета", LoadSubjects);
+        }
+
+        private void buttonEditSubject_Click(object sender, EventArgs e)
+        {
+            if (gridSubjects.CurrentRow == null) return;
+            var dt = gridSubjects.DataSource as DataTable;
+            if (dt == null) return;
+            var row = dt.Rows[gridSubjects.CurrentRow.Index];
+            int id = Convert.ToInt32(row["ID_предмета"]);
+            using (var dlg = new QuickAddForm("Изменить предмет",
+                new[] { "Название" },
+                new[] { row["Предмет"].ToString() }))
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                string name = dlg.Values[0].Trim();
+                if (string.IsNullOrEmpty(name)) return;
+                try
+                {
+                    DbHelper.Execute(
+                        "UPDATE Subjects SET Название=@n WHERE ID_предмета=@id",
+                        p => { p.AddWithValue("@n", name); p.AddWithValue("@id", id); });
+                    LoadSubjects();
+                }
+                catch (Exception ex) { DbHelper.ShowError(ex); }
+            }
         }
 
         // ── Кабинеты ────────────────────────────────────────────────────────
@@ -125,6 +179,34 @@ namespace testing
         private void buttonDeleteClassroom_Click(object sender, EventArgs e)
         {
             DeleteSelected(gridClassrooms, "Classrooms", "ID_кабинета", LoadClassrooms);
+        }
+
+        private void buttonEditClassroom_Click(object sender, EventArgs e)
+        {
+            if (gridClassrooms.CurrentRow == null) return;
+            var dt = gridClassrooms.DataSource as DataTable;
+            if (dt == null) return;
+            var row = dt.Rows[gridClassrooms.CurrentRow.Index];
+            int id = Convert.ToInt32(row["ID_кабинета"]);
+            DataTable dtTypes = DbHelper.Query(
+                "SELECT ID_типа_кабинета, Тип_кабинета AS name FROM ClassroomTypes ORDER BY Тип_кабинета");
+            using (var dlg = new QuickAddClassroomForm(dtTypes,
+                Convert.ToInt32(row["Кабинет"]),
+                Convert.ToInt32(row["Вместимость"])))
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    DbHelper.Execute(
+                        "UPDATE Classrooms SET Номер=@n, Вместимость=@c, ID_типа_кабинета=@t WHERE ID_кабинета=@id",
+                        p => { p.AddWithValue("@n", dlg.RoomNumber);
+                               p.AddWithValue("@c", dlg.Capacity > 0 ? dlg.Capacity : 30);
+                               p.AddWithValue("@t", dlg.TypeId);
+                               p.AddWithValue("@id", id); });
+                    LoadClassrooms();
+                }
+                catch (Exception ex) { DbHelper.ShowError(ex); }
+            }
         }
 
         // ── Классы ──────────────────────────────────────────────────────────
@@ -209,6 +291,38 @@ namespace testing
         private void buttonDeleteClass_Click(object sender, EventArgs e)
         {
             DeleteSelected(gridClasses, "Classes", "ID_класса", LoadClasses);
+        }
+
+        private void buttonEditClass_Click(object sender, EventArgs e)
+        {
+            if (gridClasses.CurrentRow == null) return;
+            var dt = gridClasses.DataSource as DataTable;
+            if (dt == null) return;
+            var row = dt.Rows[gridClasses.CurrentRow.Index];
+            int id = Convert.ToInt32(row["ID_класса"]);
+            // Меняем параллель и/или букву через те же комбобоксы
+            if (comboParallel.SelectedValue == null || comboLetter.SelectedValue == null)
+            {
+                MessageBox.Show("Выберите новую параллель и букву в полях выше.",
+                    "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (MessageBox.Show(
+                string.Format("Изменить класс «{0}» на «{1}{2}»?",
+                    row["Класс"],
+                    comboParallel.Text, comboLetter.Text),
+                "Подтверждение", MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+                != DialogResult.Yes) return;
+            try
+            {
+                DbHelper.Execute(
+                    "UPDATE Classes SET ID_параллели_класса=@p, ID_буквы_класса=@l WHERE ID_класса=@id",
+                    p => { p.AddWithValue("@p", comboParallel.SelectedValue);
+                           p.AddWithValue("@l", comboLetter.SelectedValue);
+                           p.AddWithValue("@id", id); });
+                LoadClasses();
+            }
+            catch (Exception ex) { DbHelper.ShowError(ex); }
         }
 
         // ── Универсальное удаление ──────────────────────────────────────────

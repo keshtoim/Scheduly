@@ -14,14 +14,22 @@ namespace testing
         public string[] Values { get; private set; }
 
         private readonly string[]   _fieldNames;
+        private readonly string[]   _initialValues;
         private readonly TextBox[]  _textBoxes;
 
         /// <param name="title">Заголовок диалога.</param>
         /// <param name="fieldNames">Названия полей для ввода.</param>
         public QuickAddForm(string title, string[] fieldNames)
+            : this(title, fieldNames, null) { }
+
+        /// <param name="title">Заголовок диалога.</param>
+        /// <param name="fieldNames">Названия полей для ввода.</param>
+        /// <param name="initialValues">Начальные значения полей (для режима редактирования).</param>
+        public QuickAddForm(string title, string[] fieldNames, string[] initialValues)
         {
-            _fieldNames = fieldNames;
-            _textBoxes  = new TextBox[fieldNames.Length];
+            _fieldNames    = fieldNames;
+            _initialValues = initialValues;
+            _textBoxes     = new TextBox[fieldNames.Length];
             InitializeComponent();
             this.Text = title;
             BuildFields();
@@ -35,6 +43,8 @@ namespace testing
             {
                 var lbl = new Label { AutoSize = true, Location = new System.Drawing.Point(12, y), Text = _fieldNames[i] + ":" };
                 var tb  = new TextBox { Location = new System.Drawing.Point(12, y + 18), Size = new System.Drawing.Size(320, 20), TabIndex = i };
+                if (_initialValues != null && i < _initialValues.Length)
+                    tb.Text = _initialValues[i];
                 panelFields.Controls.Add(lbl);
                 panelFields.Controls.Add(tb);
                 _textBoxes[i] = tb;

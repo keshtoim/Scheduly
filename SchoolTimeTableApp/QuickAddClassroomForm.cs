@@ -17,13 +17,22 @@ namespace testing
         /// <summary>ID выбранного типа кабинета.</summary>
         public int TypeId     { get; private set; }
 
-        /// <param name="roomTypes">DataTable с типами кабинетов (type_id, classroom_type).</param>
+        /// <param name="roomTypes">DataTable с типами кабинетов.</param>
         public QuickAddClassroomForm(DataTable roomTypes)
+            : this(roomTypes, 0, 30) { }
+
+        /// <param name="roomTypes">DataTable с типами кабинетов.</param>
+        /// <param name="roomNumber">Начальный номер кабинета (для редактирования).</param>
+        /// <param name="capacity">Начальная вместимость (для редактирования).</param>
+        public QuickAddClassroomForm(DataTable roomTypes, int roomNumber, int capacity)
         {
             InitializeComponent();
+            comboType.DisplayMember = "name";
+            comboType.ValueMember   = "ID_типа_кабинета";
             comboType.DataSource    = roomTypes;
-            comboType.DisplayMember = "classroom_type";
-            comboType.ValueMember   = "type_id";
+            if (roomNumber > 0) txtRoomNumber.Text = roomNumber.ToString();
+            if (capacity > 0)   txtCapacity.Text   = capacity.ToString();
+            this.Text = roomNumber > 0 ? "Изменить кабинет" : "Новый кабинет";
         }
 
         private void buttonOk_Click(object sender, EventArgs e)

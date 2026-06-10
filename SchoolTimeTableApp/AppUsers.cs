@@ -34,7 +34,9 @@ namespace testing
         public bool CanView => true;
 
         /// <summary>Может управлять пользователями и менять пароли.</summary>
-        public bool CanManageUsers => Role == UserRole.Директор;
+        public bool CanManageUsers =>
+            Role == UserRole.Директор ||
+            Role == UserRole.ЗаместительДиректора;
 
         /// <summary>Имеет полный доступ к БД (добавление/удаление таблиц и т.д.).</summary>
         public bool CanManageDatabase => Role == UserRole.Администратор;

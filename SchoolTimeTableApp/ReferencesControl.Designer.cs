@@ -21,6 +21,7 @@ namespace testing
             this.labelTeacherHours = new System.Windows.Forms.Label();
             this.txtTeacherHours = new System.Windows.Forms.TextBox();
             this.buttonAddTeacher = new System.Windows.Forms.Button();
+            this.buttonEditTeacher = new System.Windows.Forms.Button();
             this.buttonDeleteTeacher = new System.Windows.Forms.Button();
             this.gridTeachers = new System.Windows.Forms.DataGridView();
             // ── Subjects tab ──
@@ -31,6 +32,7 @@ namespace testing
             this.labelSubjectDiff = new System.Windows.Forms.Label();
             this.txtSubjectDiff = new System.Windows.Forms.TextBox();
             this.buttonAddSubject = new System.Windows.Forms.Button();
+            this.buttonEditSubject = new System.Windows.Forms.Button();
             this.buttonDeleteSubject = new System.Windows.Forms.Button();
             this.gridSubjects = new System.Windows.Forms.DataGridView();
             // ── Classrooms tab ──
@@ -43,6 +45,7 @@ namespace testing
             this.labelRoomType = new System.Windows.Forms.Label();
             this.comboClassroomType = new System.Windows.Forms.ComboBox();
             this.buttonAddClassroom = new System.Windows.Forms.Button();
+            this.buttonEditClassroom = new System.Windows.Forms.Button();
             this.buttonDeleteClassroom = new System.Windows.Forms.Button();
             this.gridClassrooms = new System.Windows.Forms.DataGridView();
             // ── Classes tab ──
@@ -56,6 +59,7 @@ namespace testing
             this.txtNewLetter    = new System.Windows.Forms.TextBox();
             this.buttonAddLetter = new System.Windows.Forms.Button();
             this.buttonAddClass  = new System.Windows.Forms.Button();
+            this.buttonEditClass = new System.Windows.Forms.Button();
             this.buttonDeleteClass = new System.Windows.Forms.Button();
             this.gridClasses     = new System.Windows.Forms.DataGridView();
 
@@ -94,7 +98,7 @@ namespace testing
             this.panelTeacher.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panelTeacher.Controls.Add(this.labelTeacherName); this.panelTeacher.Controls.Add(this.txtTeacherName);
             this.panelTeacher.Controls.Add(this.labelTeacherHours); this.panelTeacher.Controls.Add(this.txtTeacherHours);
-            this.panelTeacher.Controls.Add(this.buttonAddTeacher); this.panelTeacher.Controls.Add(this.buttonDeleteTeacher);
+            this.panelTeacher.Controls.Add(this.buttonAddTeacher); this.panelTeacher.Controls.Add(this.buttonEditTeacher); this.panelTeacher.Controls.Add(this.buttonDeleteTeacher);
             this.panelTeacher.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelTeacher.Location = new System.Drawing.Point(0, 0); this.panelTeacher.Name = "panelTeacher";
             this.panelTeacher.Size = new System.Drawing.Size(1184, 46); this.panelTeacher.TabIndex = 0;
@@ -114,9 +118,15 @@ namespace testing
             this.buttonAddTeacher.Size = new System.Drawing.Size(100, 26); this.buttonAddTeacher.TabIndex = 4;
             this.buttonAddTeacher.Text = "+ Добавить"; this.buttonAddTeacher.UseVisualStyleBackColor = false;
             this.buttonAddTeacher.Click += new System.EventHandler(this.buttonAddTeacher_Click);
+            this.buttonEditTeacher.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonEditTeacher.ForeColor = System.Drawing.Color.SteelBlue;
+            this.buttonEditTeacher.Location = new System.Drawing.Point(500, 9); this.buttonEditTeacher.Name = "buttonEditTeacher";
+            this.buttonEditTeacher.Size = new System.Drawing.Size(100, 26); this.buttonEditTeacher.TabIndex = 6;
+            this.buttonEditTeacher.Text = "Изменить"; this.buttonEditTeacher.UseVisualStyleBackColor = true;
+            this.buttonEditTeacher.Click += new System.EventHandler(this.buttonEditTeacher_Click);
             this.buttonDeleteTeacher.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonDeleteTeacher.ForeColor = System.Drawing.Color.Crimson;
-            this.buttonDeleteTeacher.Location = new System.Drawing.Point(500, 9); this.buttonDeleteTeacher.Name = "buttonDeleteTeacher";
+            this.buttonDeleteTeacher.Location = new System.Drawing.Point(608, 9); this.buttonDeleteTeacher.Name = "buttonDeleteTeacher";
             this.buttonDeleteTeacher.Size = new System.Drawing.Size(100, 26); this.buttonDeleteTeacher.TabIndex = 5;
             this.buttonDeleteTeacher.Text = "Удалить"; this.buttonDeleteTeacher.UseVisualStyleBackColor = true;
             this.buttonDeleteTeacher.Click += new System.EventHandler(this.buttonDeleteTeacher_Click);
@@ -137,7 +147,7 @@ namespace testing
             this.panelSubject.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panelSubject.Controls.Add(this.labelSubjectName); this.panelSubject.Controls.Add(this.txtSubjectName);
             this.panelSubject.Controls.Add(this.labelSubjectDiff); this.panelSubject.Controls.Add(this.txtSubjectDiff);
-            this.panelSubject.Controls.Add(this.buttonAddSubject); this.panelSubject.Controls.Add(this.buttonDeleteSubject);
+            this.panelSubject.Controls.Add(this.buttonAddSubject); this.panelSubject.Controls.Add(this.buttonEditSubject); this.panelSubject.Controls.Add(this.buttonDeleteSubject);
             this.panelSubject.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelSubject.Location = new System.Drawing.Point(0, 0); this.panelSubject.Name = "panelSubject";
             this.panelSubject.Size = new System.Drawing.Size(1184, 46); this.panelSubject.TabIndex = 0;
@@ -157,9 +167,15 @@ namespace testing
             this.buttonAddSubject.Size = new System.Drawing.Size(100, 26); this.buttonAddSubject.TabIndex = 4;
             this.buttonAddSubject.Text = "+ Добавить"; this.buttonAddSubject.UseVisualStyleBackColor = false;
             this.buttonAddSubject.Click += new System.EventHandler(this.buttonAddSubject_Click);
+            this.buttonEditSubject.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonEditSubject.ForeColor = System.Drawing.Color.SteelBlue;
+            this.buttonEditSubject.Location = new System.Drawing.Point(518, 9); this.buttonEditSubject.Name = "buttonEditSubject";
+            this.buttonEditSubject.Size = new System.Drawing.Size(100, 26); this.buttonEditSubject.TabIndex = 6;
+            this.buttonEditSubject.Text = "Изменить"; this.buttonEditSubject.UseVisualStyleBackColor = true;
+            this.buttonEditSubject.Click += new System.EventHandler(this.buttonEditSubject_Click);
             this.buttonDeleteSubject.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonDeleteSubject.ForeColor = System.Drawing.Color.Crimson;
-            this.buttonDeleteSubject.Location = new System.Drawing.Point(518, 9); this.buttonDeleteSubject.Name = "buttonDeleteSubject";
+            this.buttonDeleteSubject.Location = new System.Drawing.Point(626, 9); this.buttonDeleteSubject.Name = "buttonDeleteSubject";
             this.buttonDeleteSubject.Size = new System.Drawing.Size(100, 26); this.buttonDeleteSubject.TabIndex = 5;
             this.buttonDeleteSubject.Text = "Удалить"; this.buttonDeleteSubject.UseVisualStyleBackColor = true;
             this.buttonDeleteSubject.Click += new System.EventHandler(this.buttonDeleteSubject_Click);
@@ -181,7 +197,7 @@ namespace testing
             this.panelClassroom.Controls.Add(this.labelRoomNumber); this.panelClassroom.Controls.Add(this.txtRoomNumber);
             this.panelClassroom.Controls.Add(this.labelRoomCap); this.panelClassroom.Controls.Add(this.txtRoomCapacity);
             this.panelClassroom.Controls.Add(this.labelRoomType); this.panelClassroom.Controls.Add(this.comboClassroomType);
-            this.panelClassroom.Controls.Add(this.buttonAddClassroom); this.panelClassroom.Controls.Add(this.buttonDeleteClassroom);
+            this.panelClassroom.Controls.Add(this.buttonAddClassroom); this.panelClassroom.Controls.Add(this.buttonEditClassroom); this.panelClassroom.Controls.Add(this.buttonDeleteClassroom);
             this.panelClassroom.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelClassroom.Location = new System.Drawing.Point(0, 0); this.panelClassroom.Name = "panelClassroom";
             this.panelClassroom.Size = new System.Drawing.Size(1184, 46); this.panelClassroom.TabIndex = 0;
@@ -207,9 +223,15 @@ namespace testing
             this.buttonAddClassroom.Size = new System.Drawing.Size(100, 26); this.buttonAddClassroom.TabIndex = 6;
             this.buttonAddClassroom.Text = "+ Добавить"; this.buttonAddClassroom.UseVisualStyleBackColor = false;
             this.buttonAddClassroom.Click += new System.EventHandler(this.buttonAddClassroom_Click);
+            this.buttonEditClassroom.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonEditClassroom.ForeColor = System.Drawing.Color.SteelBlue;
+            this.buttonEditClassroom.Location = new System.Drawing.Point(612, 9); this.buttonEditClassroom.Name = "buttonEditClassroom";
+            this.buttonEditClassroom.Size = new System.Drawing.Size(100, 26); this.buttonEditClassroom.TabIndex = 8;
+            this.buttonEditClassroom.Text = "Изменить"; this.buttonEditClassroom.UseVisualStyleBackColor = true;
+            this.buttonEditClassroom.Click += new System.EventHandler(this.buttonEditClassroom_Click);
             this.buttonDeleteClassroom.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonDeleteClassroom.ForeColor = System.Drawing.Color.Crimson;
-            this.buttonDeleteClassroom.Location = new System.Drawing.Point(612, 9); this.buttonDeleteClassroom.Name = "buttonDeleteClassroom";
+            this.buttonDeleteClassroom.Location = new System.Drawing.Point(720, 9); this.buttonDeleteClassroom.Name = "buttonDeleteClassroom";
             this.buttonDeleteClassroom.Size = new System.Drawing.Size(100, 26); this.buttonDeleteClassroom.TabIndex = 7;
             this.buttonDeleteClassroom.Text = "Удалить"; this.buttonDeleteClassroom.UseVisualStyleBackColor = true;
             this.buttonDeleteClassroom.Click += new System.EventHandler(this.buttonDeleteClassroom_Click);
@@ -230,7 +252,7 @@ namespace testing
             this.panelClass.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panelClass.Controls.Add(this.labelParallel); this.panelClass.Controls.Add(this.comboParallel);
             this.panelClass.Controls.Add(this.labelLetter); this.panelClass.Controls.Add(this.comboLetter);
-            this.panelClass.Controls.Add(this.buttonAddClass); this.panelClass.Controls.Add(this.buttonDeleteClass);
+            this.panelClass.Controls.Add(this.buttonAddClass); this.panelClass.Controls.Add(this.buttonEditClass); this.panelClass.Controls.Add(this.buttonDeleteClass);
             this.panelClass.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelClass.Location = new System.Drawing.Point(0, 0); this.panelClass.Name = "panelClass";
             this.panelClass.Size = new System.Drawing.Size(1184, 46); this.panelClass.TabIndex = 0;
@@ -254,9 +276,15 @@ namespace testing
             this.buttonAddClass.Size = new System.Drawing.Size(100, 26); this.buttonAddClass.TabIndex = 4;
             this.buttonAddClass.Text = "+ Добавить"; this.buttonAddClass.UseVisualStyleBackColor = false;
             this.buttonAddClass.Click += new System.EventHandler(this.buttonAddClass_Click);
+            this.buttonEditClass.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonEditClass.ForeColor = System.Drawing.Color.SteelBlue;
+            this.buttonEditClass.Location = new System.Drawing.Point(410, 9); this.buttonEditClass.Name = "buttonEditClass";
+            this.buttonEditClass.Size = new System.Drawing.Size(100, 26); this.buttonEditClass.TabIndex = 6;
+            this.buttonEditClass.Text = "Изменить"; this.buttonEditClass.UseVisualStyleBackColor = true;
+            this.buttonEditClass.Click += new System.EventHandler(this.buttonEditClass_Click);
             this.buttonDeleteClass.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonDeleteClass.ForeColor = System.Drawing.Color.Crimson;
-            this.buttonDeleteClass.Location = new System.Drawing.Point(410, 9); this.buttonDeleteClass.Name = "buttonDeleteClass";
+            this.buttonDeleteClass.Location = new System.Drawing.Point(518, 9); this.buttonDeleteClass.Name = "buttonDeleteClass";
             this.buttonDeleteClass.Size = new System.Drawing.Size(100, 26); this.buttonDeleteClass.TabIndex = 5;
             this.buttonDeleteClass.Text = "Удалить"; this.buttonDeleteClass.UseVisualStyleBackColor = true;
             this.buttonDeleteClass.Click += new System.EventHandler(this.buttonDeleteClass_Click);
@@ -323,6 +351,7 @@ namespace testing
         private System.Windows.Forms.Label labelTeacherHours;
         private System.Windows.Forms.TextBox txtTeacherHours;
         private System.Windows.Forms.Button buttonAddTeacher;
+        private System.Windows.Forms.Button buttonEditTeacher;
         private System.Windows.Forms.Button buttonDeleteTeacher;
         private System.Windows.Forms.DataGridView gridTeachers;
         private System.Windows.Forms.TabPage tabSubjects;
@@ -332,6 +361,7 @@ namespace testing
         private System.Windows.Forms.Label labelSubjectDiff;
         private System.Windows.Forms.TextBox txtSubjectDiff;
         private System.Windows.Forms.Button buttonAddSubject;
+        private System.Windows.Forms.Button buttonEditSubject;
         private System.Windows.Forms.Button buttonDeleteSubject;
         private System.Windows.Forms.DataGridView gridSubjects;
         private System.Windows.Forms.TabPage tabClassrooms;
@@ -343,6 +373,7 @@ namespace testing
         private System.Windows.Forms.Label labelRoomType;
         private System.Windows.Forms.ComboBox comboClassroomType;
         private System.Windows.Forms.Button buttonAddClassroom;
+        private System.Windows.Forms.Button buttonEditClassroom;
         private System.Windows.Forms.Button buttonDeleteClassroom;
         private System.Windows.Forms.DataGridView gridClassrooms;
         private System.Windows.Forms.TabPage tabClasses;
@@ -352,6 +383,7 @@ namespace testing
         private System.Windows.Forms.Label labelLetter;
         private System.Windows.Forms.ComboBox comboLetter;
         private System.Windows.Forms.Button buttonAddClass;
+        private System.Windows.Forms.Button buttonEditClass;
         private System.Windows.Forms.Button buttonDeleteClass;
         private System.Windows.Forms.Label labelNewLetter;
         private System.Windows.Forms.TextBox txtNewLetter;
