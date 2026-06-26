@@ -22,7 +22,7 @@ namespace testing
             {
                 DataTable classes = DbHelper.Query(
                     "SELECT ID_класса AS class_id, " +
-                    "CAST(pc.Параллель AS NVARCHAR) + lc.Буква AS class_name " +
+                    "CAST(pc.Параллель AS TEXT) || lc.Буква AS class_name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +

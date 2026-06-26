@@ -43,7 +43,7 @@ namespace testing
             {
                 var dt = DbHelper.Query(
                     "SELECT cl.ID_класса AS class_id, " +
-                    "CONVERT(NVARCHAR, pc.Параллель) + lc.Буква AS class_name " +
+                    "CAST(pc.Параллель AS TEXT) || lc.Буква AS class_name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +

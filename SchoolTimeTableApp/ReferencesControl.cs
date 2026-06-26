@@ -22,7 +22,7 @@ namespace testing
         private void LoadTeachers()
         {
             gridTeachers.DataSource = DbHelper.Query(
-                "SELECT ID_учителя, Фамилия, Имя, Отчество, Ставка AS [Часов] " +
+                "SELECT ID_учителя, Фамилия, Имя, Отчество, Ставка AS \"Часов\" " +
                 "FROM Teachers ORDER BY Фамилия, Имя");
             if (gridTeachers.Columns.Contains("ID_учителя"))
                 gridTeachers.Columns["ID_учителя"].Visible = false;
@@ -87,7 +87,7 @@ namespace testing
         private void LoadSubjects()
         {
             gridSubjects.DataSource = DbHelper.Query(
-                "SELECT ID_предмета, Название AS [Предмет] " +
+                "SELECT ID_предмета, Название AS \"Предмет\" " +
                 "FROM Subjects ORDER BY Название");
             if (gridSubjects.Columns.Contains("ID_предмета"))
                 gridSubjects.Columns["ID_предмета"].Visible = false;
@@ -141,8 +141,8 @@ namespace testing
         private void LoadClassrooms()
         {
             gridClassrooms.DataSource = DbHelper.Query(
-                "SELECT cr.ID_кабинета, cr.Номер AS [Кабинет], " +
-                "cr.Вместимость, ct.Тип_кабинета AS [Тип] " +
+                "SELECT cr.ID_кабинета, cr.Номер AS \"Кабинет\", " +
+                "cr.Вместимость, ct.Тип_кабинета AS \"Тип\" " +
                 "FROM Classrooms cr " +
                 "JOIN ClassroomTypes ct ON cr.ID_типа_кабинета = ct.ID_типа_кабинета " +
                 "ORDER BY cr.Номер");
@@ -214,7 +214,7 @@ namespace testing
         {
             gridClasses.DataSource = DbHelper.Query(
                 "SELECT cl.ID_класса, " +
-                "CAST(pc.Параллель AS NVARCHAR) + lc.Буква AS [Класс] " +
+                "CAST(pc.Параллель AS TEXT) || lc.Буква AS \"Класс\" " +
                 "FROM Classes cl " +
                 "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                 "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +

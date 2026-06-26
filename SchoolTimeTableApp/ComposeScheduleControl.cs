@@ -39,7 +39,7 @@ namespace testing
             {
                 DataTable dt = DbHelper.Query(
                     "SELECT ID_класса, " +
-                    "CONVERT(NVARCHAR, pc.Параллель) + lc.Буква AS class_name " +
+                    "CAST(pc.Параллель AS TEXT) || lc.Буква AS class_name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc ON cl.ID_буквы_класса = lc.ID_буквы_класса " +
@@ -316,7 +316,7 @@ namespace testing
                 // считаем сколько уроков в неделю у него стоит ВСЕГО (по всем классам)
                 // и сравниваем со ставкой
                 DataTable dt = DbHelper.Query(
-                    "SELECT t.ID_учителя, t.Фамилия + ' ' + t.Имя + ' ' + t.Отчество AS ФИО, " +
+                    "SELECT t.ID_учителя, t.Фамилия || ' ' || t.Имя || ' ' || t.Отчество AS ФИО, " +
                     "       t.Ставка, " +
                     "       (SELECT COUNT(*) FROM Schedule s2 " +
                     "        JOIN Workload w2 ON s2.ID_нагрузки = w2.ID_нагрузки " +

@@ -23,11 +23,11 @@ namespace testing
             {
                 // Используем представление vw_Workload
                 DataTable dt = DbHelper.Query(
-                    "SELECT ID_нагрузки, Класс, Предмет, ФИО_учителя AS [Учитель], " +
-                    "Количество_часов_в_неделю AS [Часов/нед], " +
-                    "Поставлено_уроков AS [Поставлено уроков] " +
+                    "SELECT ID_нагрузки, Класс, Предмет, ФИО_учителя AS \"Учитель\", " +
+                    "Количество_часов_в_неделю AS \"Часов/нед\", " +
+                    "Поставлено_уроков AS \"Поставлено уроков\" " +
                     "FROM vw_Workload " +
-                    "ORDER BY Параллель, Буква, Предмет");
+                    "ORDER BY Параллель, Класс, Предмет");
 
                 dataGrid.DataSource = dt;
                 if (dataGrid.Columns.Contains("ID_нагрузки"))
@@ -43,7 +43,7 @@ namespace testing
                 // Используем CONVERT вместо CAST для совместимости с collation
                 DataTable dtClass = DbHelper.Query(
                     "SELECT ID_класса AS class_id, " +
-                    "CONVERT(NVARCHAR, pc.Параллель) + lc.Буква AS name " +
+                    "CAST(pc.Параллель AS TEXT) || lc.Буква AS name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
@@ -55,8 +55,8 @@ namespace testing
                 // Упрощённый список: только название предмета + параллель
                 DataTable dtSubject = DbHelper.Query(
                     "SELECT sbp.ID_предмета_со_сложностью AS subject_id, " +
-                    "sub.Название + N' (' + CONVERT(NVARCHAR, pc.Параллель) + N' кл., сл.' + " +
-                    "CONVERT(NVARCHAR, d.Сложность) + N')' AS name " +
+                    "sub.Название || ' (' || CAST(pc.Параллель AS TEXT) || ' кл., сл.' || " +
+                    "CAST(d.Сложность AS TEXT) || ')' AS name " +
                     "FROM SubjectByParallel sbp " +
                     "JOIN Subjects sub      ON sbp.ID_предмета  = sub.ID_предмета " +
                     "JOIN ParallelClass pc  ON sbp.ID_параллели = pc.ID_параллели_класса " +
@@ -68,7 +68,7 @@ namespace testing
 
                 DataTable dtTeacher = DbHelper.Query(
                     "SELECT ID_учителя AS teacher_id, " +
-                    "Фамилия + N' ' + Имя + N' ' + Отчество AS name " +
+                    "Фамилия || ' ' || Имя || ' ' || Отчество AS name " +
                     "FROM Teachers ORDER BY Фамилия, Имя");
                 comboTeacher.DisplayMember = "name";
                 comboTeacher.ValueMember   = "teacher_id";

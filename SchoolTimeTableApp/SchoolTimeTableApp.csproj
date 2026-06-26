@@ -145,6 +145,7 @@
     <Compile Include="SettingsForm.Designer.cs">
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="StoredProcedures.cs" />
     <Compile Include="UserManagementForm.cs">
       <SubType>Form</SubType>
     </Compile>

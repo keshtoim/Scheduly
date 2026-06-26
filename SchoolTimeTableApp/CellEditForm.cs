@@ -82,7 +82,7 @@ namespace testing
             {
                 DataTable dtAll = DbHelper.Query(
                     "SELECT t.ID_учителя AS teacher_id, " +
-                    "t.Фамилия + ' ' + t.Имя + ' ' + t.Отчество AS full_name " +
+                    "t.Фамилия || ' ' || t.Имя || ' ' || t.Отчество AS full_name " +
                     "FROM Teachers t " +
                     "WHERE t.ID_учителя IN " +
                     "  (SELECT DISTINCT w.ID_учителя FROM Workload w WHERE w.ID_класса = @cid) " +
@@ -132,7 +132,7 @@ namespace testing
             {
                 DataTable dtAll = DbHelper.Query(
                     "SELECT cr.ID_кабинета AS classroom_id, cr.Номер, ct.Тип_кабинета, " +
-                    "CAST(cr.Номер AS NVARCHAR) + ' (' + ct.Тип_кабинета + ')' AS display " +
+                    "CAST(cr.Номер AS TEXT) || ' (' || ct.Тип_кабинета || ')' AS display " +
                     "FROM Classrooms cr JOIN ClassroomTypes ct ON cr.ID_типа_кабинета = ct.ID_типа_кабинета " +
                     "ORDER BY cr.Номер");
 
@@ -269,7 +269,7 @@ namespace testing
             try
             {
                 DataTable dtCls = DbHelper.Query(
-                    "SELECT CAST(pc.Параллель AS NVARCHAR) + lc.Буква AS class_name " +
+                    "SELECT CAST(pc.Параллель AS TEXT) || lc.Буква AS class_name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +

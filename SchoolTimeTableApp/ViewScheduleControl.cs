@@ -27,7 +27,7 @@ namespace testing
             {
                 DataTable dtClass = DbHelper.Query(
                     "SELECT ID_класса AS class_id, " +
-                    "CONVERT(NVARCHAR, pc.Параллель) + lc.Буква AS class_name " +
+                    "CAST(pc.Параллель AS TEXT) || lc.Буква AS class_name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
@@ -41,7 +41,7 @@ namespace testing
 
                 DataTable dtTeacher = DbHelper.Query(
                     "SELECT ID_учителя AS teacher_id, " +
-                    "Фамилия + ' ' + Имя + ' ' + Отчество AS full_name " +
+                    "Фамилия || ' ' || Имя || ' ' || Отчество AS full_name " +
                     "FROM Teachers ORDER BY Фамилия, Имя");
                 DataRow allT = dtTeacher.NewRow();
                 allT["teacher_id"] = DBNull.Value; allT["full_name"] = "Все учителя";
@@ -167,7 +167,7 @@ namespace testing
             {
                 DataTable classes = DbHelper.Query(
                     "SELECT cl.ID_класса AS class_id, " +
-                    "CONVERT(NVARCHAR, pc.Параллель) + lc.Буква AS class_name " +
+                    "CAST(pc.Параллель AS TEXT) || lc.Буква AS class_name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
                     "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
