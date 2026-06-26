@@ -42,12 +42,12 @@ namespace testing
             try
             {
                 var dt = DbHelper.Query(
-                    "SELECT cl.class_id, " +
-                    "CAST(cp.parallel AS NVARCHAR) + lc.letterClass AS class_name " +
+                    "SELECT cl.ID_класса AS class_id, " +
+                    "CONVERT(NVARCHAR, pc.Параллель) + lc.Буква AS class_name " +
                     "FROM Classes cl " +
-                    "JOIN ClassParallel cp ON cl.id_parallel_class = cp.id_parallel_class " +
-                    "JOIN LetterOfTheClass lc ON cl.id_letter_class = lc.id_letter_class " +
-                    "ORDER BY cp.parallel, lc.letterClass");
+                    "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
+                    "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
+                    "ORDER BY pc.Параллель, lc.Буква");
 
                 dataGridLimits.Rows.Clear();
                 foreach (System.Data.DataRow row in dt.Rows)
