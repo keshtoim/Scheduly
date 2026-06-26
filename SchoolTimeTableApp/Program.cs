@@ -5,7 +5,8 @@ namespace testing
 {
     /// <summary>
     /// Точка входа в приложение.
-    /// Сначала открывает форму авторизации, и только при успешном входе — главное окно.
+    /// Сначала гарантирует наличие базы данных (создаёт при первом запуске),
+    /// затем открывает форму авторизации и, при успешном входе, главное окно.
     /// </summary>
     static class Program
     {
@@ -14,6 +15,21 @@ namespace testing
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            // При первом запуске создаём файл базы SQLite из встроенных скриптов.
+            // Если база уже существует — метод ничего не делает.
+            try
+            {
+                DbHelper.EnsureDatabase();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Не удалось подготовить базу данных:\n" + ex.Message,
+                    "Критическая ошибка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return; // без базы продолжать нельзя
+            }
 
             // Открываем форму авторизации
             AuthForm auth = new AuthForm();

@@ -217,5 +217,61 @@ namespace testing
             MessageBox.Show(msg, "Ошибка",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+
+        // ================================================================
+        //  СОВМЕСТИМОСТЬ С ХРАНИМЫМИ ПРОЦЕДУРАМИ
+        //  SQLite не поддерживает процедуры, поэтому их логика перенесена
+        //  в класс StoredProcedures. Эти два метода сохраняют прежний
+        //  интерфейс вызова (ExecProc / ExecProcNonQuery с лямбдой
+        //  заполнения параметров), поэтому остальной код не меняется.
+        //  Параметры собираются во временную коллекцию, из неё — в словарь,
+        //  который передаётся в реализацию на C#.
+        // ================================================================
+
+        /// <summary>
+        /// Считывает параметры, заполненные лямбдой, в словарь «имя -> значение».
+        /// </summary>
+        private static System.Collections.Generic.Dictionary<string, object>
+            CollectParams(Action<SqliteParameterCollection> addParams)
+        {
+            var dict = new System.Collections.Generic.Dictionary<string, object>();
+            if (addParams != null)
+            {
+                // Создаём временную команду только ради сбора параметров
+                using (var tmp = new SqliteCommand())
+                {
+                    addParams(tmp.Parameters);
+                    foreach (SqliteParameter prm in tmp.Parameters)
+                        dict[prm.ParameterName] = prm.Value;
+                }
+            }
+            return dict;
+        }
+
+        /// <summary>
+        /// Аналог прежнего вызова хранимой процедуры, возвращающей таблицу.
+        /// </summary>
+        public static DataTable ExecProc(string procName,
+            Action<SqliteParameterCollection> addParams = null)
+        {
+            var p = CollectParams(addParams);
+            using (var c = Open())
+            {
+                return StoredProcedures.RunQuery(procName, p, c);
+            }
+        }
+
+        /// <summary>
+        /// Аналог прежнего вызова хранимой процедуры без возврата данных.
+        /// </summary>
+        public static int ExecProcNonQuery(string procName,
+            Action<SqliteParameterCollection> addParams = null)
+        {
+            var p = CollectParams(addParams);
+            using (var c = Open())
+            {
+                return StoredProcedures.RunNonQuery(procName, p, c);
+            }
+        }
     }
 }
