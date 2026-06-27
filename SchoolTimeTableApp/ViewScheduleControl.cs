@@ -127,9 +127,12 @@ namespace testing
                     int lesson = Convert.ToInt32(row["Номер_урока"]);
                     string cn  = "day" + day;
                     if (!dataGrid.Columns.Contains(cn)) continue;
-                    var cell = dataGrid.Rows[lesson - 1].Cells[cn];
-                    cell.Value = string.Format("{0}\n{1}\nКаб. {2}",
-                        row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+                    var cell  = dataGrid.Rows[lesson - 1].Cells[cn];
+                    string pfx = FormatEntryPrefix(row);
+                    string entry = string.Format("{0}{1}\n{2}\nКаб. {3}",
+                        pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+                    string existing = cell.Value?.ToString() ?? "";
+                    cell.Value = string.IsNullOrEmpty(existing) ? entry : existing + "\n──\n" + entry;
                     if (IsConflict(conflicts, day, lesson))
                     { cell.Style.BackColor = Color.MistyRose; cell.Style.ForeColor = Color.DarkRed; }
                 }
@@ -207,10 +210,13 @@ namespace testing
                         int lesson = Convert.ToInt32(row["Номер_урока"]);
                         string cn  = "day" + day;
                         if (!dataGrid.Columns.Contains(cn)) continue;
-                        int ri = start + lesson - 1;
+                        int ri   = start + lesson - 1;
                         var cell = dataGrid.Rows[ri].Cells[cn];
-                        cell.Value = string.Format("{0}\n{1} / {2}",
-                            row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+                        string pfx = FormatEntryPrefix(row);
+                        string entry = string.Format("{0}{1}\n{2}/{3}",
+                            pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+                        string existing = cell.Value?.ToString() ?? "";
+                        cell.Value = string.IsNullOrEmpty(existing) ? entry : existing + "\n──\n" + entry;
                         if (IsConflict(conflicts, day, lesson))
                         { cell.Style.BackColor = Color.MistyRose; cell.Style.ForeColor = Color.DarkRed; }
                     }
@@ -240,6 +246,14 @@ namespace testing
         {
             return DbHelper.Query(
                 "SELECT DISTINCT ID_дня_недели, Номер_урока FROM vw_Conflicts");
+        }
+
+        private static string FormatEntryPrefix(DataRow row)
+        {
+            string week = row["Пометка_недели"]?.ToString() ?? "";
+            string sub  = row["Пометка_подгруппы"]?.ToString() ?? "";
+            string pfx  = (week + sub).Trim();
+            return pfx.Length > 0 ? pfx + " " : "";
         }
 
         private bool IsConflict(DataTable conflicts, int day, int lesson)

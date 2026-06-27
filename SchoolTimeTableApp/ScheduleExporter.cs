@@ -100,8 +100,11 @@ namespace testing
                         if (Convert.ToInt32(row["Номер_урока"]) != l) continue;
                         int day  = Convert.ToInt32(row["ID_дня_недели"]);
                         var cell = ws.Cell(curRow, day + 2);
-                        cell.Value = string.Format("{0}\n{1}\nКаб.{2}",
-                            row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+                        string pfx   = FormatPrefix(row);
+                        string entry = string.Format("{0}{1}\n{2}\nКаб.{3}",
+                            pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+                        string cur = cell.GetString();
+                        cell.Value = string.IsNullOrEmpty(cur) ? entry : cur + "\n──\n" + entry;
                         if (IsConflict(conflicts, day, l))
                         { cell.Style.Fill.BackgroundColor = ConflictBg;
                           cell.Style.Font.FontColor       = ConflictFg; }
@@ -164,8 +167,11 @@ namespace testing
                     if (Convert.ToInt32(row["Номер_урока"]) != l) continue;
                     int day  = Convert.ToInt32(row["ID_дня_недели"]);
                     var cell = ws.Cell(ri, day + 1);
-                    cell.Value = string.Format("{0}\n{1}\nКаб. {2}",
-                        row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+                    string pfx   = FormatPrefix(row);
+                    string entry = string.Format("{0}{1}\n{2}\nКаб. {3}",
+                        pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+                    string cur = cell.GetString();
+                    cell.Value = string.IsNullOrEmpty(cur) ? entry : cur + "\n──\n" + entry;
                     if (IsConflict(conflicts, day, l))
                     { cell.Style.Fill.BackgroundColor = ConflictBg;
                       cell.Style.Font.FontColor       = ConflictFg; }
@@ -177,6 +183,14 @@ namespace testing
             ws.Column(1).Width = 6;
             for (int d = 2; d <= 6; d++) ws.Column(d).Width = 30;
             ws.SheetView.FreezeRows(3);
+        }
+
+        private static string FormatPrefix(DataRow row)
+        {
+            string week = row["Пометка_недели"]?.ToString()  ?? "";
+            string sub  = row["Пометка_подгруппы"]?.ToString() ?? "";
+            string pfx  = (week + sub).Trim();
+            return pfx.Length > 0 ? pfx + " " : "";
         }
 
         private static bool IsConflict(DataTable c, int day, int lesson)

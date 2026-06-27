@@ -145,7 +145,8 @@ namespace testing
                 DataTable dt = DbHelper.Query(
                     "SELECT ID_расписания, ID_нагрузки, ID_кабинета, Кабинет, " +
                     "ID_дня_недели, Номер_урока, ID_учителя, ФИО_учителя, " +
-                    "Предмет, ID_предмета_со_сложностью, Сложность " +
+                    "Предмет, ID_предмета_со_сложностью, Сложность, " +
+                    "Чётность_недели, Пометка_недели, Подгруппа, Пометка_подгруппы " +
                     "FROM vw_Schedule WHERE ID_класса = @cid",
                     p => p.AddWithValue("@cid", _selectedClassId));
 
@@ -157,13 +158,16 @@ namespace testing
                     if (day < 1 || day > 5 || lesson < 1 || lesson > MAX_LESSONS) continue;
 
                     var cell = dataGrid.Rows[lesson - 1].Cells["day" + day];
-                    cell.Value = string.Format("{0}\n{1} / {2}",
-                        row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+
+                    // Tag хранит List<DataRow> для поддержки нескольких уроков в одном слоте
+                    if (!(cell.Tag is List<DataRow>))
+                        cell.Tag = new List<DataRow>();
+                    ((List<DataRow>)cell.Tag).Add(row);
+
+                    cell.Value           = BuildCellText((List<DataRow>)cell.Tag);
                     cell.Style.ForeColor = Color.Black;
                     cell.Style.BackColor = Color.White;
-                    cell.Tag = row;
 
-                    // Суммируем сложность по дням
                     _diffBySlot[lesson - 1, day - 1] += diff;
                 }
 
@@ -363,44 +367,100 @@ namespace testing
             labelInfoRoomVal.Text    = row["Кабинет"]?.ToString()     ?? "—";
         }
 
+        private static string BuildCellText(List<DataRow> entries)
+        {
+            if (entries == null || entries.Count == 0) return "+";
+            var sb = new System.Text.StringBuilder();
+            foreach (var row in entries)
+            {
+                if (sb.Length > 0) sb.Append("\n──\n");
+                string week = row["Пометка_недели"]?.ToString() ?? "";
+                string sub  = row["Пометка_подгруппы"]?.ToString() ?? "";
+                string pfx  = (week + sub).Length > 0 ? (week + sub + " ") : "";
+                sb.AppendFormat("{0}{1}\n{2}/{3}", pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
+            }
+            return sb.ToString();
+        }
+
         private void dataGrid_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex <= 0 || _selectedClassId < 0) return;
-            // Строка сложности — не кликабельна
             if ((string)dataGrid.Rows[e.RowIndex].Tag == "diffRow") return;
 
-            int day    = e.ColumnIndex; // lesson=0, day1..5 = 1..5
+            int day    = e.ColumnIndex;
             int lesson = e.RowIndex + 1;
             var cell   = dataGrid.Rows[e.RowIndex].Cells[e.ColumnIndex];
-            var existing = cell.Tag as DataRow;
+            var entries = cell.Tag as List<DataRow>;
 
-            UpdateInfoPanel(existing, day, lesson);
+            DataRow infoRow = entries?.Count > 0 ? entries[0] : null;
+            UpdateInfoPanel(infoRow, day, lesson);
 
-            bool isConflict = cell.Style.BackColor == Color.MistyRose;
-            if (isConflict && existing != null)
+            if (entries == null || entries.Count == 0)
             {
-                string desc = GetConflictDescription(existing);
-                using (var dlg = new ConflictDialogForm(desc))
-                {
-                    dlg.ShowDialog(this);
-                    if (dlg.Choice == ConflictDialogForm.ConflictChoice.Cancel) return;
-                    if (dlg.Choice == ConflictDialogForm.ConflictChoice.EditOther)
-                    {
-                        var other = FindConflictingRow(existing);
-                        if (other != null)
-                        {
-                            int od = Convert.ToInt32(other["ID_дня_недели"]);
-                            int ol = Convert.ToInt32(other["Номер_урока"]);
-                            using (var ed = new CellEditForm(_selectedClassId, od, ol, other))
-                                if (ed.ShowDialog(this) == DialogResult.OK) FillGridFromDb();
-                        }
-                        return;
-                    }
-                }
+                using (var dlg = new CellEditForm(_selectedClassId, day, lesson, null))
+                    if (dlg.ShowDialog(this) == DialogResult.OK) FillGridFromDb();
+                return;
             }
 
-            using (var dlg = new CellEditForm(_selectedClassId, day, lesson, existing))
-                if (dlg.ShowDialog(this) == DialogResult.OK) FillGridFromDb();
+            if (entries.Count == 1)
+            {
+                DataRow existing  = entries[0];
+                bool isConflict   = cell.Style.BackColor == Color.MistyRose;
+                if (isConflict)
+                {
+                    string desc = GetConflictDescription(existing);
+                    using (var dlg = new ConflictDialogForm(desc))
+                    {
+                        dlg.ShowDialog(this);
+                        if (dlg.Choice == ConflictDialogForm.ConflictChoice.Cancel) return;
+                        if (dlg.Choice == ConflictDialogForm.ConflictChoice.EditOther)
+                        {
+                            var other = FindConflictingRow(existing);
+                            if (other != null)
+                            {
+                                int od = Convert.ToInt32(other["ID_дня_недели"]);
+                                int ol = Convert.ToInt32(other["Номер_урока"]);
+                                using (var ed = new CellEditForm(_selectedClassId, od, ol, other))
+                                    if (ed.ShowDialog(this) == DialogResult.OK) FillGridFromDb();
+                            }
+                            return;
+                        }
+                    }
+                }
+                using (var dlg = new CellEditForm(_selectedClassId, day, lesson, existing))
+                    if (dlg.ShowDialog(this) == DialogResult.OK) FillGridFromDb();
+                return;
+            }
+
+            // Несколько уроков в слоте (подгруппы / двухнедельные) — контекстное меню
+            ShowMultiEntryMenu(cell, entries, day, lesson);
+        }
+
+        private void ShowMultiEntryMenu(DataGridViewCell cell, List<DataRow> entries, int day, int lesson)
+        {
+            var menu = new ContextMenuStrip();
+            foreach (var entry in entries)
+            {
+                string week = entry["Пометка_недели"]?.ToString() ?? "";
+                string sub  = entry["Пометка_подгруппы"]?.ToString() ?? "";
+                string pfx  = (week + sub).Length > 0 ? (week + sub + " ") : "";
+                string label = pfx + entry["Предмет"] + " — " + entry["ФИО_учителя"];
+                var item = new ToolStripMenuItem("Изменить: " + label);
+                DataRow captured = entry;
+                item.Click += (s, ev) => {
+                    using (var dlg = new CellEditForm(_selectedClassId, day, lesson, captured))
+                        if (dlg.ShowDialog(this) == DialogResult.OK) FillGridFromDb();
+                };
+                menu.Items.Add(item);
+            }
+            menu.Items.Add(new ToolStripSeparator());
+            var addItem = new ToolStripMenuItem("+ Добавить урок в этот слот");
+            addItem.Click += (s, ev) => {
+                using (var dlg = new CellEditForm(_selectedClassId, day, lesson, null))
+                    if (dlg.ShowDialog(this) == DialogResult.OK) FillGridFromDb();
+            };
+            menu.Items.Add(addItem);
+            menu.Show(dataGrid, dataGrid.PointToClient(Cursor.Position));
         }
 
         private string GetConflictDescription(DataRow row)
