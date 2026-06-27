@@ -9,9 +9,8 @@ namespace testing
     public enum UserRole
     {
         Администратор        = 1,
-        Директор             = 2,
-        ЗаместительДиректора = 3,
-        Учитель              = 4
+        ЗаместительДиректора = 2,
+        Учитель              = 3
     }
 
     /// <summary>
@@ -35,7 +34,6 @@ namespace testing
 
         /// <summary>Может управлять пользователями и менять пароли.</summary>
         public bool CanManageUsers =>
-            Role == UserRole.Директор ||
             Role == UserRole.ЗаместительДиректора;
 
         /// <summary>Имеет полный доступ к БД (добавление/удаление таблиц и т.д.).</summary>
@@ -57,7 +55,7 @@ namespace testing
             {
                 DataTable dt = DbHelper.Query(
                     "SELECT u.ID_пользователя, u.Логин, u.Отображаемое_имя, " +
-                    "u.ID_роли, r.Название AS Роль " +
+                    "u.ID_роли, r.Роль AS Роль " +
                     "FROM Users u " +
                     "JOIN Roles r ON u.ID_роли = r.ID_роли " +
                     "WHERE u.Логин = @login AND u.Пароль = @pwd AND u.Активен = 1",
@@ -88,7 +86,7 @@ namespace testing
         }
 
         /// <summary>
-        /// Меняет пароль пользователя. Доступно только Директору.
+        /// Меняет пароль пользователя. Доступно Заместителю директора.
         /// </summary>
         public static bool ChangePassword(int userId, string newPassword)
         {
@@ -112,7 +110,7 @@ namespace testing
         {
             return DbHelper.Query(
                 "SELECT u.ID_пользователя, u.Логин, u.Отображаемое_имя, " +
-                "r.Название AS Роль, u.Активен " +
+                "r.Роль AS Роль, u.Активен " +
                 "FROM Users u JOIN Roles r ON u.ID_роли = r.ID_роли " +
                 "ORDER BY r.ID_роли, u.Отображаемое_имя");
         }
@@ -123,11 +121,11 @@ namespace testing
         public static DataTable GetAllRoles()
         {
             return DbHelper.Query(
-                "SELECT ID_роли, Название FROM Roles ORDER BY ID_роли");
+                "SELECT ID_роли, Роль FROM Roles ORDER BY ID_роли");
         }
 
         /// <summary>
-        /// Меняет роль пользователя. Доступно только Директору.
+        /// Меняет роль пользователя. Доступно Заместителю директора.
         /// </summary>
         public static bool ChangeRole(int userId, int roleId)
         {

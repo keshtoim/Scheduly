@@ -1,3 +1,11 @@
 <Solution>
-  <Project Path="SchoolTimeTableApp/SchoolTimeTableApp.csproj" Id="77ead661-396e-476a-a3b8-afacc6c64b4a" />
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="ARM64" />
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="SchoolTimeTableApp/SchoolTimeTableApp.csproj" Id="77ead661-396e-476a-a3b8-afacc6c64b4a">
+    <Platform Solution="*|ARM64" Project="ARM64" />
+    <Platform Solution="*|x64" Project="x64" />
+  </Project>
 </Solution>
