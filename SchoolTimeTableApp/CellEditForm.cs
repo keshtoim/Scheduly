@@ -47,6 +47,12 @@ namespace testing
                     if (drv["classroom_id"].ToString() == _existing["ID_кабинета"].ToString())
                     { comboClassroom.SelectedItem = drv; break; }
 
+                // Предвыбираем чётность недели из существующей записи
+                int parity = Convert.ToInt32(_existing["Чётность_недели"]);
+                if      (parity == 1) radioWeekOdd.Checked  = true;
+                else if (parity == 2) radioWeekEven.Checked = true;
+                else                  radioWeekAll.Checked  = true;
+
                 buttonDelete.Visible = true;
             }
             else
@@ -187,6 +193,7 @@ namespace testing
             int subjectParallelId = Convert.ToInt32(comboSubject.SelectedValue);
             int teacherId         = Convert.ToInt32(comboTeacher.SelectedValue);
             int classroomId       = Convert.ToInt32(comboClassroom.SelectedValue);
+            int weekParity        = radioWeekOdd.Checked ? 1 : (radioWeekEven.Checked ? 2 : 0);
 
             // Проверка лимита уроков
             string limitMsg = CheckDayLimit();
@@ -197,8 +204,8 @@ namespace testing
                     != DialogResult.Yes) return;
             }
 
-            // Проверка конфликта учителя
-            string conflictMsg = CheckTeacherConflict(teacherId);
+            // Проверка конфликта учителя с учётом чётности недели
+            string conflictMsg = CheckTeacherConflict(teacherId, weekParity);
             if (conflictMsg != null)
             {
                 if (MessageBox.Show("Обнаружен конфликт:\n" + conflictMsg + "\n\nВсё равно сохранить?",
@@ -214,22 +221,23 @@ namespace testing
             {
                 if (_existing == null)
                 {
-                    // Используем хранимую процедуру
                     DbHelper.ExecProcNonQuery("sp_AddLesson",
                         p => {
-                            p.AddWithValue("@ID_нагрузки",     workloadId);
-                            p.AddWithValue("@ID_кабинета",     classroomId);
-                            p.AddWithValue("@ID_дня_недели",   _day);
-                            p.AddWithValue("@ID_номера_урока", _lesson);
+                            p.AddWithValue("@ID_нагрузки",      workloadId);
+                            p.AddWithValue("@ID_кабинета",      classroomId);
+                            p.AddWithValue("@ID_дня_недели",    _day);
+                            p.AddWithValue("@ID_номера_урока",  _lesson);
+                            p.AddWithValue("@Чётность_недели",  weekParity);
                         });
                 }
                 else
                 {
                     DbHelper.ExecProcNonQuery("sp_UpdateLesson",
                         p => {
-                            p.AddWithValue("@ID_расписания", Convert.ToInt32(_existing["ID_расписания"]));
-                            p.AddWithValue("@ID_нагрузки",   workloadId);
-                            p.AddWithValue("@ID_кабинета",   classroomId);
+                            p.AddWithValue("@ID_расписания",    Convert.ToInt32(_existing["ID_расписания"]));
+                            p.AddWithValue("@ID_нагрузки",      workloadId);
+                            p.AddWithValue("@ID_кабинета",      classroomId);
+                            p.AddWithValue("@Чётность_недели",  weekParity);
                         });
                 }
                 DialogResult = DialogResult.OK;
@@ -257,7 +265,8 @@ namespace testing
                     p => { p.AddWithValue("@ID_учителя",               teacherId);
                            p.AddWithValue("@ID_класса",                _classId);
                            p.AddWithValue("@ID_предмета_параллели",    subjectParallelId);
-                           p.AddWithValue("@Количество_часов_в_неделю", (byte)0); });
+                           p.AddWithValue("@Количество_часов_в_неделю", (byte)1);
+                           p.AddWithValue("@Подгруппа", System.DBNull.Value); });
 
                 return dt2.Rows.Count > 0 ? Convert.ToInt32(dt2.Rows[0]["ID_нагрузки"]) : -1;
             }
@@ -298,16 +307,18 @@ namespace testing
             return null;
         }
 
-        private string CheckTeacherConflict(int teacherId)
+        private string CheckTeacherConflict(int teacherId, int weekParity)
         {
             string skip = _existing != null
                 ? " AND ID_расписания <> " + _existing["ID_расписания"] : "";
             bool busy = DbHelper.Exists(
                 "SELECT COUNT(*) FROM vw_Schedule " +
-                "WHERE ID_дня_недели = @d AND Номер_урока = @l AND ID_учителя = @tid" + skip,
-                p => { p.AddWithValue("@tid", teacherId);
-                       p.AddWithValue("@d",   _day);
-                       p.AddWithValue("@l",   _lesson); });
+                "WHERE ID_дня_недели = @d AND Номер_урока = @l AND ID_учителя = @tid" +
+                " AND (Чётность_недели = 0 OR @week = 0 OR Чётность_недели = @week)" + skip,
+                p => { p.AddWithValue("@tid",  teacherId);
+                       p.AddWithValue("@d",    _day);
+                       p.AddWithValue("@l",    _lesson);
+                       p.AddWithValue("@week", weekParity); });
             return busy ? "Учитель уже ведёт другой урок в это время." : null;
         }
 

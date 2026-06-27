@@ -21,9 +21,9 @@ namespace testing
         {
             try
             {
-                // Используем представление vw_Workload
                 DataTable dt = DbHelper.Query(
                     "SELECT ID_нагрузки, Класс, Предмет, ФИО_учителя AS \"Учитель\", " +
+                    "Тип_нагрузки AS \"Группа\", " +
                     "Количество_часов_в_неделю AS \"Часов/нед\", " +
                     "Поставлено_уроков AS \"Поставлено уроков\" " +
                     "FROM vw_Workload " +
@@ -73,6 +73,13 @@ namespace testing
                 comboTeacher.DisplayMember = "name";
                 comboTeacher.ValueMember   = "teacher_id";
                 comboTeacher.DataSource    = dtTeacher;
+
+                // Подгруппа: 0=весь класс, 1=подгруппа 1, 2=подгруппа 2
+                comboSubgroup.Items.Clear();
+                comboSubgroup.Items.Add("Весь класс");
+                comboSubgroup.Items.Add("Подгруппа 1");
+                comboSubgroup.Items.Add("Подгруппа 2");
+                comboSubgroup.SelectedIndex = 0;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка справочников"); }
         }
@@ -93,6 +100,12 @@ namespace testing
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
+
+            // 0=весь класс → null, 1=П1 → 1, 2=П2 → 2
+            object subgroupParam = comboSubgroup.SelectedIndex <= 0
+                ? (object)System.DBNull.Value
+                : (object)comboSubgroup.SelectedIndex;
+
             try
             {
                 DbHelper.ExecProcNonQuery("sp_AddWorkload",
@@ -101,8 +114,10 @@ namespace testing
                         p.AddWithValue("@ID_класса",                comboClass.SelectedValue);
                         p.AddWithValue("@ID_предмета_параллели",    comboSubject.SelectedValue);
                         p.AddWithValue("@Количество_часов_в_неделю", (byte)hours);
+                        p.AddWithValue("@Подгруппа",                subgroupParam);
                     });
                 textHours.Clear();
+                comboSubgroup.SelectedIndex = 0;
                 LoadWorkloadGrid();
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Добавление нагрузки"); }

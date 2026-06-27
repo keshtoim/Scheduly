@@ -22,9 +22,14 @@ namespace testing
             this.labelClassroom      = new System.Windows.Forms.Label();
             this.comboClassroom      = new System.Windows.Forms.ComboBox();
             this.buttonAddClassroom  = new System.Windows.Forms.Button();
+            this.groupWeekParity     = new System.Windows.Forms.GroupBox();
+            this.radioWeekAll        = new System.Windows.Forms.RadioButton();
+            this.radioWeekOdd        = new System.Windows.Forms.RadioButton();
+            this.radioWeekEven       = new System.Windows.Forms.RadioButton();
             this.buttonSave          = new System.Windows.Forms.Button();
             this.buttonDelete        = new System.Windows.Forms.Button();
             this.buttonCancel        = new System.Windows.Forms.Button();
+            this.groupWeekParity.SuspendLayout();
             this.SuspendLayout();
             // labelSlotTitle
             this.labelSlotTitle.AutoSize  = true;
@@ -72,7 +77,7 @@ namespace testing
             this.comboTeacher.Name               = "comboTeacher";
             this.comboTeacher.Size               = new System.Drawing.Size(388, 21);
             this.comboTeacher.TabIndex           = 5;
-            // buttonAddTeacher — кнопка быстрого добавления учителя
+            // buttonAddTeacher
             this.buttonAddTeacher.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonAddTeacher.Font      = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.buttonAddTeacher.ForeColor = System.Drawing.Color.SteelBlue;
@@ -98,7 +103,7 @@ namespace testing
             this.comboClassroom.Name               = "comboClassroom";
             this.comboClassroom.Size               = new System.Drawing.Size(388, 21);
             this.comboClassroom.TabIndex           = 8;
-            // buttonAddClassroom — кнопка быстрого добавления кабинета
+            // buttonAddClassroom
             this.buttonAddClassroom.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonAddClassroom.Font      = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.buttonAddClassroom.ForeColor = System.Drawing.Color.SteelBlue;
@@ -109,40 +114,73 @@ namespace testing
             this.buttonAddClassroom.Text      = "+";
             this.buttonAddClassroom.UseVisualStyleBackColor = true;
             this.buttonAddClassroom.Click += new System.EventHandler(this.buttonAddClassroom_Click);
+            // groupWeekParity — выбор чётности/нечётности недели
+            this.groupWeekParity.Controls.Add(this.radioWeekAll);
+            this.groupWeekParity.Controls.Add(this.radioWeekOdd);
+            this.groupWeekParity.Controls.Add(this.radioWeekEven);
+            this.groupWeekParity.Location = new System.Drawing.Point(12, 214);
+            this.groupWeekParity.Name     = "groupWeekParity";
+            this.groupWeekParity.Size     = new System.Drawing.Size(420, 48);
+            this.groupWeekParity.TabIndex = 10;
+            this.groupWeekParity.TabStop  = false;
+            this.groupWeekParity.Text     = "Недели";
+            // radioWeekAll — 0: каждую неделю
+            this.radioWeekAll.AutoSize = true;
+            this.radioWeekAll.Checked  = true;
+            this.radioWeekAll.Location = new System.Drawing.Point(10, 20);
+            this.radioWeekAll.Name     = "radioWeekAll";
+            this.radioWeekAll.Size     = new System.Drawing.Size(120, 17);
+            this.radioWeekAll.TabIndex = 0;
+            this.radioWeekAll.TabStop  = true;
+            this.radioWeekAll.Text     = "Каждую неделю";
+            // radioWeekOdd — 1: только нечётные недели
+            this.radioWeekOdd.AutoSize = true;
+            this.radioWeekOdd.Location = new System.Drawing.Point(148, 20);
+            this.radioWeekOdd.Name     = "radioWeekOdd";
+            this.radioWeekOdd.Size     = new System.Drawing.Size(90, 17);
+            this.radioWeekOdd.TabIndex = 1;
+            this.radioWeekOdd.Text     = "Нечётные";
+            // radioWeekEven — 2: только чётные недели
+            this.radioWeekEven.AutoSize = true;
+            this.radioWeekEven.Location = new System.Drawing.Point(256, 20);
+            this.radioWeekEven.Name     = "radioWeekEven";
+            this.radioWeekEven.Size     = new System.Drawing.Size(70, 17);
+            this.radioWeekEven.TabIndex = 2;
+            this.radioWeekEven.Text     = "Чётные";
             // buttonSave
             this.buttonSave.BackColor = System.Drawing.Color.SteelBlue;
             this.buttonSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonSave.ForeColor = System.Drawing.Color.White;
-            this.buttonSave.Location  = new System.Drawing.Point(12, 224);
+            this.buttonSave.Location  = new System.Drawing.Point(12, 274);
             this.buttonSave.Name      = "buttonSave";
             this.buttonSave.Size      = new System.Drawing.Size(110, 28);
-            this.buttonSave.TabIndex  = 10;
+            this.buttonSave.TabIndex  = 11;
             this.buttonSave.Text      = "Сохранить";
             this.buttonSave.UseVisualStyleBackColor = false;
             this.buttonSave.Click += new System.EventHandler(this.buttonSave_Click);
             // buttonDelete
             this.buttonDelete.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonDelete.ForeColor = System.Drawing.Color.Crimson;
-            this.buttonDelete.Location  = new System.Drawing.Point(136, 224);
+            this.buttonDelete.Location  = new System.Drawing.Point(136, 274);
             this.buttonDelete.Name      = "buttonDelete";
             this.buttonDelete.Size      = new System.Drawing.Size(120, 28);
-            this.buttonDelete.TabIndex  = 11;
+            this.buttonDelete.TabIndex  = 12;
             this.buttonDelete.Text      = "Удалить урок";
             this.buttonDelete.UseVisualStyleBackColor = true;
             this.buttonDelete.Click += new System.EventHandler(this.buttonDelete_Click);
             // buttonCancel
             this.buttonCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonCancel.Location  = new System.Drawing.Point(310, 224);
+            this.buttonCancel.Location  = new System.Drawing.Point(310, 274);
             this.buttonCancel.Name      = "buttonCancel";
             this.buttonCancel.Size      = new System.Drawing.Size(118, 28);
-            this.buttonCancel.TabIndex  = 12;
+            this.buttonCancel.TabIndex  = 13;
             this.buttonCancel.Text      = "Отмена";
             this.buttonCancel.UseVisualStyleBackColor = true;
             this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
             // CellEditForm
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize          = new System.Drawing.Size(444, 266);
+            this.ClientSize          = new System.Drawing.Size(444, 314);
             this.Controls.Add(this.labelSlotTitle);
             this.Controls.Add(this.labelSlot);
             this.Controls.Add(this.labelSubject);
@@ -153,6 +191,7 @@ namespace testing
             this.Controls.Add(this.labelClassroom);
             this.Controls.Add(this.comboClassroom);
             this.Controls.Add(this.buttonAddClassroom);
+            this.Controls.Add(this.groupWeekParity);
             this.Controls.Add(this.buttonSave);
             this.Controls.Add(this.buttonDelete);
             this.Controls.Add(this.buttonCancel);
@@ -163,23 +202,29 @@ namespace testing
             this.StartPosition   = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text            = "Урок";
             this.Load += new System.EventHandler(this.CellEditForm_Load);
+            this.groupWeekParity.ResumeLayout(false);
+            this.groupWeekParity.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
         }
         #endregion
 
-        private System.Windows.Forms.Label    labelSlotTitle;
-        private System.Windows.Forms.Label    labelSlot;
-        private System.Windows.Forms.Label    labelSubject;
-        private System.Windows.Forms.ComboBox comboSubject;
-        private System.Windows.Forms.Label    labelTeacher;
-        private System.Windows.Forms.ComboBox comboTeacher;
-        private System.Windows.Forms.Button   buttonAddTeacher;
-        private System.Windows.Forms.Label    labelClassroom;
-        private System.Windows.Forms.ComboBox comboClassroom;
-        private System.Windows.Forms.Button   buttonAddClassroom;
-        private System.Windows.Forms.Button   buttonSave;
-        private System.Windows.Forms.Button   buttonDelete;
-        private System.Windows.Forms.Button   buttonCancel;
+        private System.Windows.Forms.Label       labelSlotTitle;
+        private System.Windows.Forms.Label       labelSlot;
+        private System.Windows.Forms.Label       labelSubject;
+        private System.Windows.Forms.ComboBox    comboSubject;
+        private System.Windows.Forms.Label       labelTeacher;
+        private System.Windows.Forms.ComboBox    comboTeacher;
+        private System.Windows.Forms.Button      buttonAddTeacher;
+        private System.Windows.Forms.Label       labelClassroom;
+        private System.Windows.Forms.ComboBox    comboClassroom;
+        private System.Windows.Forms.Button      buttonAddClassroom;
+        private System.Windows.Forms.GroupBox    groupWeekParity;
+        private System.Windows.Forms.RadioButton radioWeekAll;
+        private System.Windows.Forms.RadioButton radioWeekOdd;
+        private System.Windows.Forms.RadioButton radioWeekEven;
+        private System.Windows.Forms.Button      buttonSave;
+        private System.Windows.Forms.Button      buttonDelete;
+        private System.Windows.Forms.Button      buttonCancel;
     }
 }
