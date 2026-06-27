@@ -325,6 +325,51 @@ namespace testing
             catch (Exception ex) { DbHelper.ShowError(ex); }
         }
 
+        // ── Enter-клавиша и двойной клик ───────────────────────────────────
+        private void txtTeacherName_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            if (e.KeyCode == System.Windows.Forms.Keys.Enter)
+            { e.SuppressKeyPress = true; buttonAddTeacher_Click(null, EventArgs.Empty); }
+        }
+
+        private void gridTeachers_CellDoubleClick(object sender, System.Windows.Forms.DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0) buttonEditTeacher_Click(null, EventArgs.Empty);
+        }
+
+        private void txtSubjectName_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            if (e.KeyCode == System.Windows.Forms.Keys.Enter)
+            { e.SuppressKeyPress = true; buttonAddSubject_Click(null, EventArgs.Empty); }
+        }
+
+        private void gridSubjects_CellDoubleClick(object sender, System.Windows.Forms.DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0) buttonEditSubject_Click(null, EventArgs.Empty);
+        }
+
+        private void txtRoomNumber_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            if (e.KeyCode == System.Windows.Forms.Keys.Enter)
+            { e.SuppressKeyPress = true; buttonAddClassroom_Click(null, EventArgs.Empty); }
+        }
+
+        private void gridClassrooms_CellDoubleClick(object sender, System.Windows.Forms.DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0) buttonEditClassroom_Click(null, EventArgs.Empty);
+        }
+
+        private void txtNewLetter_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            if (e.KeyCode == System.Windows.Forms.Keys.Enter)
+            { e.SuppressKeyPress = true; buttonAddLetter_Click(null, EventArgs.Empty); }
+        }
+
+        private void gridClasses_CellDoubleClick(object sender, System.Windows.Forms.DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex >= 0) buttonEditClass_Click(null, EventArgs.Empty);
+        }
+
         // ── Универсальное удаление ──────────────────────────────────────────
         private void DeleteSelected(DataGridView grid, string table, string pk, Action reload)
         {

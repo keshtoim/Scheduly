@@ -15,6 +15,13 @@ namespace testing
         private static readonly Color ColorOddWeek  = Color.FromArgb(218, 234, 255);
         private static readonly Color ColorEvenWeek = Color.FromArgb(235, 218, 255);
 
+        // Запись расписания для кастомной отрисовки ячейки
+        private class ScheduleEntry
+        {
+            public string Text;
+            public int    Parity; // 0=каждую, 1=нечётная, 2=чётная
+        }
+
         public ViewScheduleControl() { InitializeComponent(); }
 
         public void LoadSchedule()
@@ -54,7 +61,6 @@ namespace testing
                 comboTeacher.ValueMember   = "teacher_id";
                 comboTeacher.DataSource    = dtTeacher;
 
-                // Фильтр по ступени обучения
                 comboLevel.Items.Clear();
                 comboLevel.Items.Add("Все ступени");
                 comboLevel.Items.Add("Начальная школа (1–4)");
@@ -88,7 +94,7 @@ namespace testing
             }
         }
 
-        private int GetWeekMode() => comboWeekFilter.SelectedIndex; // 0=обе, 1=нч, 2=чт
+        private int GetWeekMode() => comboWeekFilter.SelectedIndex;
 
         private void RebuildGrid()
         {
@@ -103,27 +109,102 @@ namespace testing
                 BuildAllClassesView(teacherFilter, dayFilter);
         }
 
-        // Словарь для отслеживания типа недели по ячейке (для цветовой раскраски)
-        // Ключ = (colName, rowIndex), значение = суммарная маска: 1=нч, 2=чт, 4=обе
-        private Dictionary<string, int> _cellWeekMask;
-
-        private void ApplyCellWeekColor(DataGridViewCell cell, int weekMask)
+        // ─── Кастомная отрисовка ячеек с чередующимися уроками ────────────
+        private void dataGrid_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
-            if (weekMask == 1)       cell.Style.BackColor = ColorOddWeek;
-            else if (weekMask == 2)  cell.Style.BackColor = ColorEvenWeek;
-            // 3 (нч+чт) или 4 (каждую) или другое — белый (не перекрываем)
+            if (e.RowIndex < 0 || e.ColumnIndex < 0) return;
+            string colName = dataGrid.Columns[e.ColumnIndex].Name;
+            if (!colName.StartsWith("day")) return;
+
+            var cell    = dataGrid.Rows[e.RowIndex].Cells[e.ColumnIndex];
+            var entries = cell.Tag as List<ScheduleEntry>;
+            if (entries == null) return;
+
+            bool isConflict = cell.Style.ForeColor == Color.DarkRed;
+
+            // Одна запись: только подкрасить фон, дефолтная отрисовка
+            if (entries.Count == 1)
+            {
+                if (!isConflict)
+                {
+                    int p = entries[0].Parity;
+                    if      (p == 1) e.CellStyle.BackColor = ColorOddWeek;
+                    else if (p == 2) e.CellStyle.BackColor = ColorEvenWeek;
+                }
+                return;
+            }
+
+            // Несколько записей: рисуем цветные блоки
+            e.Handled = true;
+            bool isSelected = (e.State & DataGridViewElementStates.Selected) != 0;
+            int partH = e.CellBounds.Height / entries.Count;
+
+            e.Graphics.FillRectangle(SystemBrushes.Window,
+                new Rectangle(e.CellBounds.X, e.CellBounds.Y,
+                              e.CellBounds.Width - 1, e.CellBounds.Height - 1));
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                int y = e.CellBounds.Y + i * partH;
+                int h = (i == entries.Count - 1)
+                    ? (e.CellBounds.Y + e.CellBounds.Height - 1 - y)
+                    : partH;
+                var partRect = new Rectangle(e.CellBounds.X + 1, y, e.CellBounds.Width - 2, h);
+
+                Color bg;
+                if (isConflict) bg = Color.MistyRose;
+                else
+                {
+                    int p = entries[i].Parity;
+                    bg = p == 1 ? ColorOddWeek : p == 2 ? ColorEvenWeek : Color.White;
+                }
+                using (var brush = new SolidBrush(bg))
+                    e.Graphics.FillRectangle(brush, partRect);
+
+                if (i > 0)
+                    using (var pen = new Pen(Color.FromArgb(160, 160, 200)))
+                        e.Graphics.DrawLine(pen,
+                            e.CellBounds.X + 2, y, e.CellBounds.Right - 3, y);
+
+                Color fg = isConflict ? Color.DarkRed : Color.Black;
+                var textRect = new Rectangle(
+                    partRect.X + 3, partRect.Y + 2, partRect.Width - 6, partRect.Height - 4);
+                TextRenderer.DrawText(e.Graphics, entries[i].Text,
+                    e.CellStyle.Font ?? dataGrid.DefaultCellStyle.Font,
+                    textRect, fg,
+                    TextFormatFlags.WordBreak | TextFormatFlags.Left | TextFormatFlags.Top);
+            }
+
+            if (isSelected)
+                using (var selBrush = new SolidBrush(Color.FromArgb(60, 0, 120, 215)))
+                    e.Graphics.FillRectangle(selBrush,
+                        new Rectangle(e.CellBounds.X + 1, e.CellBounds.Y,
+                                      e.CellBounds.Width - 2, e.CellBounds.Height - 1));
+
+            using (var gridPen = new Pen(dataGrid.GridColor))
+                e.Graphics.DrawRectangle(gridPen,
+                    new Rectangle(e.CellBounds.X, e.CellBounds.Y,
+                                  e.CellBounds.Width - 1, e.CellBounds.Height - 1));
+        }
+
+        // ─── Добавление записи в ячейку ───────────────────────────────────
+        private void AddEntryToCell(DataGridViewCell cell, string text, int parity)
+        {
+            var entries = cell.Tag as List<ScheduleEntry>;
+            if (entries == null) { entries = new List<ScheduleEntry>(); cell.Tag = entries; }
+            entries.Add(new ScheduleEntry { Text = text, Parity = parity });
+            cell.Value = string.Join("\n──\n", entries.ConvertAll(x => x.Text));
         }
 
         private void BuildSingleClassView(string classId, string teacherFilter, int dayFilter)
         {
             dataGrid.Rows.Clear(); dataGrid.Columns.Clear();
-            _cellWeekMask = new Dictionary<string, int>();
 
             var lc = new DataGridViewTextBoxColumn
                 { Name = "lesson", HeaderText = "Урок", Width = 60, ReadOnly = true };
             lc.DefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
             lc.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            lc.DefaultCellStyle.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            lc.DefaultCellStyle.Font      = new Font("Segoe UI", 9F, FontStyle.Bold);
             dataGrid.Columns.Add(lc);
 
             for (int d = 1; d <= 5; d++)
@@ -147,43 +228,25 @@ namespace testing
 
             try
             {
-                DataTable dt = DbHelper.Query(sql);
+                DataTable dt        = DbHelper.Query(sql);
                 DataTable conflicts = GetAllConflicts();
 
                 foreach (DataRow row in dt.Rows)
                 {
-                    int day    = Convert.ToInt32(row["ID_дня_недели"]);
-                    int lesson = Convert.ToInt32(row["Номер_урока"]);
-                    string cn  = "day" + day;
+                    int    day    = Convert.ToInt32(row["ID_дня_недели"]);
+                    int    lesson = Convert.ToInt32(row["Номер_урока"]);
+                    int    parity = Convert.ToInt32(row["Чётность_недели"]);
+                    string cn     = "day" + day;
                     if (!dataGrid.Columns.Contains(cn)) continue;
-                    var cell  = dataGrid.Rows[lesson - 1].Cells[cn];
-                    string pfx = FormatEntryPrefix(row, weekMode);
-                    string entry = string.Format("{0}{1}\n{2}\nКаб. {3}",
-                        pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
-                    string existing = cell.Value?.ToString() ?? "";
-                    cell.Value = string.IsNullOrEmpty(existing) ? entry : existing + "\n──\n" + entry;
+                    var cell = dataGrid.Rows[lesson - 1].Cells[cn];
 
-                    // Накапливаем маску недели для ячейки
-                    string key = cn + "_" + (lesson - 1);
-                    int parity = Convert.ToInt32(row["Чётность_недели"]);
-                    int bit = parity == 1 ? 1 : parity == 2 ? 2 : 4;
-                    _cellWeekMask[key] = (_cellWeekMask.ContainsKey(key) ? _cellWeekMask[key] : 0) | bit;
+                    string pfx   = FormatEntryPrefix(row, weekMode);
+                    string text  = $"{pfx}{row["Предмет"]}\n{row["ФИО_учителя"]}\nКаб. {row["Кабинет"]}";
+                    AddEntryToCell(cell, text, parity);
 
                     if (IsConflict(conflicts, day, lesson))
                     { cell.Style.BackColor = Color.MistyRose; cell.Style.ForeColor = Color.DarkRed; }
                 }
-
-                // Цветовая раскраска по чётности (только если нет конфликта)
-                if (weekMode == 0)
-                    foreach (var kv in _cellWeekMask)
-                    {
-                        string[] parts = kv.Key.Split('_');
-                        string colName = parts[0]; int ri = int.Parse(parts[1]);
-                        if (!dataGrid.Columns.Contains(colName)) continue;
-                        var cell = dataGrid.Rows[ri].Cells[colName];
-                        if (cell.Style.ForeColor != Color.DarkRed)
-                            ApplyCellWeekColor(cell, kv.Value);
-                    }
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка данных"); }
         }
@@ -191,12 +254,11 @@ namespace testing
         private void BuildAllClassesView(string teacherFilter, int dayFilter)
         {
             dataGrid.Rows.Clear(); dataGrid.Columns.Clear();
-            _cellWeekMask = new Dictionary<string, int>();
 
             var cc = new DataGridViewTextBoxColumn
                 { Name = "class_name", HeaderText = "Класс", Width = 70, ReadOnly = true };
             cc.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            cc.DefaultCellStyle.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            cc.DefaultCellStyle.Font      = new Font("Segoe UI", 9F, FontStyle.Bold);
             cc.DefaultCellStyle.BackColor = Color.FromArgb(240, 240, 240);
             dataGrid.Columns.Add(cc);
 
@@ -230,10 +292,10 @@ namespace testing
 
                 foreach (DataRow cls in classes.Rows)
                 {
-                    int    cid   = Convert.ToInt32(cls["class_id"]);
-                    string cname = cls["class_name"].ToString().Trim();
-                    int    start = dataGrid.Rows.Count;
-                    bool   odd   = (classes.Rows.IndexOf(cls) % 2 == 0);
+                    int    cid    = Convert.ToInt32(cls["class_id"]);
+                    string cname  = cls["class_name"].ToString().Trim();
+                    int    start  = dataGrid.Rows.Count;
+                    bool   odd    = (classes.Rows.IndexOf(cls) % 2 == 0);
                     Color  baseBg = odd ? Color.White : Color.FromArgb(248, 252, 255);
 
                     for (int l = 1; l <= MAX_LESSONS; l++)
@@ -257,44 +319,27 @@ namespace testing
                     DataTable dt = DbHelper.Query(sql);
                     foreach (DataRow row in dt.Rows)
                     {
-                        int day    = Convert.ToInt32(row["ID_дня_недели"]);
-                        int lesson = Convert.ToInt32(row["Номер_урока"]);
-                        string cn  = "day" + day;
+                        int    day    = Convert.ToInt32(row["ID_дня_недели"]);
+                        int    lesson = Convert.ToInt32(row["Номер_урока"]);
+                        int    parity = Convert.ToInt32(row["Чётность_недели"]);
+                        string cn     = "day" + day;
                         if (!dataGrid.Columns.Contains(cn)) continue;
                         int ri   = start + lesson - 1;
                         var cell = dataGrid.Rows[ri].Cells[cn];
-                        string pfx = FormatEntryPrefix(row, weekMode);
-                        string entry = string.Format("{0}{1}\n{2}/{3}",
-                            pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
-                        string existing = cell.Value?.ToString() ?? "";
-                        cell.Value = string.IsNullOrEmpty(existing) ? entry : existing + "\n──\n" + entry;
 
-                        int parity = Convert.ToInt32(row["Чётность_недели"]);
-                        int bit = parity == 1 ? 1 : parity == 2 ? 2 : 4;
-                        string key = cn + "_" + ri;
-                        _cellWeekMask[key] = (_cellWeekMask.ContainsKey(key) ? _cellWeekMask[key] : 0) | bit;
+                        string pfx  = FormatEntryPrefix(row, weekMode);
+                        string text = $"{pfx}{row["Предмет"]}\n{row["ФИО_учителя"]}/{row["Кабинет"]}";
+                        AddEntryToCell(cell, text, parity);
 
                         if (IsConflict(conflicts, day, lesson))
                         { cell.Style.BackColor = Color.MistyRose; cell.Style.ForeColor = Color.DarkRed; }
                     }
 
-                    if (weekMode == 0)
-                        foreach (var kv in _cellWeekMask)
-                        {
-                            string[] parts = kv.Key.Split('_');
-                            string colName = parts[0]; int ri2 = int.Parse(parts[1]);
-                            if (ri2 < start || ri2 >= start + MAX_LESSONS) continue;
-                            if (!dataGrid.Columns.Contains(colName)) continue;
-                            var cell = dataGrid.Rows[ri2].Cells[colName];
-                            if (cell.Style.ForeColor != Color.DarkRed)
-                                ApplyCellWeekColor(cell, kv.Value);
-                        }
-
                     for (int i = start; i < start + MAX_LESSONS; i++)
                     {
                         dataGrid.Rows[i].Cells["class_name"].Style.BackColor = Color.FromArgb(230, 240, 255);
                         dataGrid.Rows[i].Cells["class_name"].Style.Font =
-                            new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+                            new Font("Segoe UI", 9F, FontStyle.Bold);
                     }
                 }
             }
@@ -319,7 +364,6 @@ namespace testing
 
         private static string FormatEntryPrefix(DataRow row, int weekMode = 0)
         {
-            // При фильтре по конкретной неделе пометку [Нч]/[Чт] не показываем (и так понятно)
             string week = weekMode == 0 ? (row["Пометка_недели"]?.ToString() ?? "") : "";
             string sub  = row["Пометка_подгруппы"]?.ToString() ?? "";
             string pfx  = (week + sub).Trim();
@@ -408,7 +452,7 @@ namespace testing
                     else { if (!isConflict) cell.Style.ForeColor = Color.LightGray; }
                 }
 
-            labelSearchHint.Text      = count > 0 ? string.Format("Найдено: {0}", count) : "Не найдено";
+            labelSearchHint.Text      = count > 0 ? $"Найдено: {count}" : "Не найдено";
             labelSearchHint.ForeColor = count > 0 ? Color.SeaGreen : Color.Crimson;
         }
     }
