@@ -13,17 +13,18 @@ namespace testing
         private void InitializeComponent()
         {
             this.groupStep1      = new System.Windows.Forms.GroupBox();
-            this.labelTeacher    = new System.Windows.Forms.Label();
-            this.comboTeacher    = new System.Windows.Forms.ComboBox();
+            this.labelGrade      = new System.Windows.Forms.Label();
+            this.comboGrade      = new System.Windows.Forms.ComboBox();
             this.labelSubject    = new System.Windows.Forms.Label();
             this.comboSubject    = new System.Windows.Forms.ComboBox();
+            this.groupStep2      = new System.Windows.Forms.GroupBox();
+            this.labelTeacher    = new System.Windows.Forms.Label();
+            this.comboTeacher    = new System.Windows.Forms.ComboBox();
             this.labelHours      = new System.Windows.Forms.Label();
             this.textHours       = new System.Windows.Forms.TextBox();
             this.labelSubgroup   = new System.Windows.Forms.Label();
             this.comboSubgroup   = new System.Windows.Forms.ComboBox();
-            this.groupStep2      = new System.Windows.Forms.GroupBox();
-            this.labelGrade      = new System.Windows.Forms.Label();
-            this.comboGrade      = new System.Windows.Forms.ComboBox();
+            this.groupStep3      = new System.Windows.Forms.GroupBox();
             this.buttonSelectAll = new System.Windows.Forms.Button();
             this.buttonClearAll  = new System.Windows.Forms.Button();
             this.checkedListClasses = new System.Windows.Forms.CheckedListBox();
@@ -32,157 +33,154 @@ namespace testing
             this.buttonClose     = new System.Windows.Forms.Button();
             this.groupStep1.SuspendLayout();
             this.groupStep2.SuspendLayout();
+            this.groupStep3.SuspendLayout();
             this.SuspendLayout();
             //
-            // Шрифт формы (наследуется всеми дочерними элементами)
+            // Шаг 1: параллель и предмет
             //
-            this.Font = new System.Drawing.Font("Segoe UI", 11F);
-            //
-            // groupStep1 — данные урока
-            //
-            this.groupStep1.Controls.Add(this.labelTeacher);
-            this.groupStep1.Controls.Add(this.comboTeacher);
+            this.groupStep1.Controls.Add(this.labelGrade);
+            this.groupStep1.Controls.Add(this.comboGrade);
             this.groupStep1.Controls.Add(this.labelSubject);
             this.groupStep1.Controls.Add(this.comboSubject);
-            this.groupStep1.Controls.Add(this.labelHours);
-            this.groupStep1.Controls.Add(this.textHours);
-            this.groupStep1.Controls.Add(this.labelSubgroup);
-            this.groupStep1.Controls.Add(this.comboSubgroup);
             this.groupStep1.ForeColor = System.Drawing.Color.SteelBlue;
             this.groupStep1.Location  = new System.Drawing.Point(8, 8);
             this.groupStep1.Name      = "groupStep1";
-            this.groupStep1.Size      = new System.Drawing.Size(596, 172);
-            this.groupStep1.TabIndex  = 0;
-            this.groupStep1.TabStop   = false;
-            this.groupStep1.Text      = "Шаг 1.  Данные урока";
+            this.groupStep1.Size      = new System.Drawing.Size(532, 100);
+            this.groupStep1.TabIndex  = 0; this.groupStep1.TabStop = false;
+            this.groupStep1.Text      = "Шаг 1.  Параллель и предмет";
+            // labelGrade
+            this.labelGrade.AutoSize  = true;
+            this.labelGrade.ForeColor = System.Drawing.Color.Black;
+            this.labelGrade.Location  = new System.Drawing.Point(10, 24);
+            this.labelGrade.Text      = "Параллель:";
+            // comboGrade — ГЛАВНЫЙ элемент: фильтрует предметы + отмечает классы
+            this.comboGrade.DropDownStyle     = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboGrade.FormattingEnabled = true;
+            this.comboGrade.Location          = new System.Drawing.Point(80, 20);
+            this.comboGrade.Name              = "comboGrade";
+            this.comboGrade.Size              = new System.Drawing.Size(80, 21);
+            this.comboGrade.TabIndex          = 0;
+            this.comboGrade.SelectedIndexChanged += new System.EventHandler(this.comboGrade_SelectedIndexChanged);
+            // labelSubject
+            this.labelSubject.AutoSize  = true;
+            this.labelSubject.ForeColor = System.Drawing.Color.Black;
+            this.labelSubject.Location  = new System.Drawing.Point(10, 58);
+            this.labelSubject.Text      = "Предмет:";
+            // comboSubject — фильтруется по выбранной параллели
+            this.comboSubject.DropDownStyle     = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboSubject.FormattingEnabled = true;
+            this.comboSubject.Location          = new System.Drawing.Point(68, 54);
+            this.comboSubject.Name              = "comboSubject";
+            this.comboSubject.Size              = new System.Drawing.Size(452, 21);
+            this.comboSubject.TabIndex          = 1;
+            //
+            // Шаг 2: учитель и нагрузка
+            //
+            this.groupStep2.Controls.Add(this.labelTeacher);
+            this.groupStep2.Controls.Add(this.comboTeacher);
+            this.groupStep2.Controls.Add(this.labelHours);
+            this.groupStep2.Controls.Add(this.textHours);
+            this.groupStep2.Controls.Add(this.labelSubgroup);
+            this.groupStep2.Controls.Add(this.comboSubgroup);
+            this.groupStep2.ForeColor = System.Drawing.Color.SteelBlue;
+            this.groupStep2.Location  = new System.Drawing.Point(8, 114);
+            this.groupStep2.Name      = "groupStep2";
+            this.groupStep2.Size      = new System.Drawing.Size(532, 82);
+            this.groupStep2.TabIndex  = 1; this.groupStep2.TabStop = false;
+            this.groupStep2.Text      = "Шаг 2.  Учитель и часы";
             // labelTeacher
-            this.labelTeacher.AutoSize = true;
+            this.labelTeacher.AutoSize  = true;
             this.labelTeacher.ForeColor = System.Drawing.Color.Black;
-            this.labelTeacher.Location = new System.Drawing.Point(12, 32);
-            this.labelTeacher.Name     = "labelTeacher";
-            this.labelTeacher.Text     = "Учитель:";
+            this.labelTeacher.Location  = new System.Drawing.Point(10, 24);
+            this.labelTeacher.Text      = "Учитель:";
             // comboTeacher
             this.comboTeacher.DropDownStyle     = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboTeacher.FormattingEnabled = true;
-            this.comboTeacher.Location          = new System.Drawing.Point(104, 26);
+            this.comboTeacher.Location          = new System.Drawing.Point(68, 20);
             this.comboTeacher.Name              = "comboTeacher";
-            this.comboTeacher.Size              = new System.Drawing.Size(470, 29);
-            this.comboTeacher.TabIndex          = 0;
-            // labelSubject
-            this.labelSubject.AutoSize = true;
-            this.labelSubject.ForeColor = System.Drawing.Color.Black;
-            this.labelSubject.Location = new System.Drawing.Point(12, 76);
-            this.labelSubject.Name     = "labelSubject";
-            this.labelSubject.Text     = "Предмет:";
-            // comboSubject
-            this.comboSubject.DropDownStyle     = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboSubject.FormattingEnabled = true;
-            this.comboSubject.Location          = new System.Drawing.Point(104, 70);
-            this.comboSubject.Name              = "comboSubject";
-            this.comboSubject.Size              = new System.Drawing.Size(470, 29);
-            this.comboSubject.TabIndex          = 1;
-            this.comboSubject.SelectedIndexChanged += new System.EventHandler(this.comboSubject_SelectedIndexChanged);
+            this.comboTeacher.Size              = new System.Drawing.Size(452, 21);
+            this.comboTeacher.TabIndex          = 2;
             // labelHours
-            this.labelHours.AutoSize = true;
+            this.labelHours.AutoSize  = true;
             this.labelHours.ForeColor = System.Drawing.Color.Black;
-            this.labelHours.Location = new System.Drawing.Point(12, 120);
-            this.labelHours.Name     = "labelHours";
-            this.labelHours.Text     = "Часов/нед:";
+            this.labelHours.Location  = new System.Drawing.Point(10, 55);
+            this.labelHours.Text      = "Часов/нед:";
             // textHours
-            this.textHours.Location = new System.Drawing.Point(118, 114);
+            this.textHours.Location = new System.Drawing.Point(82, 51);
             this.textHours.Name     = "textHours";
-            this.textHours.Size     = new System.Drawing.Size(62, 29);
-            this.textHours.TabIndex = 2;
-            this.textHours.Text     = "2";
+            this.textHours.Size     = new System.Drawing.Size(50, 20);
+            this.textHours.TabIndex = 3;
             // labelSubgroup
-            this.labelSubgroup.AutoSize = true;
+            this.labelSubgroup.AutoSize  = true;
             this.labelSubgroup.ForeColor = System.Drawing.Color.Black;
-            this.labelSubgroup.Location = new System.Drawing.Point(196, 120);
-            this.labelSubgroup.Name     = "labelSubgroup";
-            this.labelSubgroup.Text     = "Подгруппа:";
+            this.labelSubgroup.Location  = new System.Drawing.Point(142, 55);
+            this.labelSubgroup.Text      = "Подгруппа:";
             // comboSubgroup
             this.comboSubgroup.DropDownStyle     = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboSubgroup.FormattingEnabled = true;
-            this.comboSubgroup.Location          = new System.Drawing.Point(298, 114);
+            this.comboSubgroup.Location          = new System.Drawing.Point(218, 51);
             this.comboSubgroup.Name              = "comboSubgroup";
-            this.comboSubgroup.Size              = new System.Drawing.Size(200, 29);
-            this.comboSubgroup.TabIndex          = 3;
+            this.comboSubgroup.Size              = new System.Drawing.Size(150, 21);
+            this.comboSubgroup.TabIndex          = 4;
             //
-            // groupStep2 — выбор классов
+            // Шаг 3: классы (уже автоматически отмечены)
             //
-            this.groupStep2.Controls.Add(this.labelGrade);
-            this.groupStep2.Controls.Add(this.comboGrade);
-            this.groupStep2.Controls.Add(this.buttonSelectAll);
-            this.groupStep2.Controls.Add(this.buttonClearAll);
-            this.groupStep2.Controls.Add(this.checkedListClasses);
-            this.groupStep2.ForeColor = System.Drawing.Color.SteelBlue;
-            this.groupStep2.Location  = new System.Drawing.Point(8, 186);
-            this.groupStep2.Name      = "groupStep2";
-            this.groupStep2.Size      = new System.Drawing.Size(596, 330);
-            this.groupStep2.TabIndex  = 1;
-            this.groupStep2.TabStop   = false;
-            this.groupStep2.Text      = "Шаг 2.  Выберите классы";
-            // labelGrade
-            this.labelGrade.AutoSize = true;
-            this.labelGrade.ForeColor = System.Drawing.Color.Black;
-            this.labelGrade.Location = new System.Drawing.Point(12, 34);
-            this.labelGrade.Name     = "labelGrade";
-            this.labelGrade.Text     = "Параллель:";
-            // comboGrade
-            this.comboGrade.DropDownStyle     = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboGrade.FormattingEnabled = true;
-            this.comboGrade.Location          = new System.Drawing.Point(120, 28);
-            this.comboGrade.Name              = "comboGrade";
-            this.comboGrade.Size              = new System.Drawing.Size(80, 29);
-            this.comboGrade.TabIndex          = 4;
-            this.comboGrade.SelectedIndexChanged += new System.EventHandler(this.comboGrade_SelectedIndexChanged);
+            this.groupStep3.Controls.Add(this.buttonSelectAll);
+            this.groupStep3.Controls.Add(this.buttonClearAll);
+            this.groupStep3.Controls.Add(this.checkedListClasses);
+            this.groupStep3.ForeColor = System.Drawing.Color.SteelBlue;
+            this.groupStep3.Location  = new System.Drawing.Point(8, 202);
+            this.groupStep3.Name      = "groupStep3";
+            this.groupStep3.Size      = new System.Drawing.Size(532, 248);
+            this.groupStep3.TabIndex  = 2; this.groupStep3.TabStop = false;
+            this.groupStep3.Text      = "Шаг 3.  Классы  (отмечаются автоматически при выборе параллели)";
             // buttonSelectAll
-            this.buttonSelectAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonSelectAll.ForeColor = System.Drawing.Color.Black;
-            this.buttonSelectAll.Location  = new System.Drawing.Point(212, 26);
-            this.buttonSelectAll.Name      = "buttonSelectAll";
-            this.buttonSelectAll.Size      = new System.Drawing.Size(140, 32);
-            this.buttonSelectAll.TabIndex  = 5;
-            this.buttonSelectAll.Text      = "Выбрать все";
-            this.buttonSelectAll.Click    += new System.EventHandler(this.buttonSelectAll_Click);
+            this.buttonSelectAll.FlatStyle  = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonSelectAll.ForeColor  = System.Drawing.Color.Black;
+            this.buttonSelectAll.Location   = new System.Drawing.Point(10, 22);
+            this.buttonSelectAll.Name       = "buttonSelectAll";
+            this.buttonSelectAll.Size       = new System.Drawing.Size(110, 23);
+            this.buttonSelectAll.TabIndex   = 5;
+            this.buttonSelectAll.Text       = "Выбрать все";
+            this.buttonSelectAll.Click     += new System.EventHandler(this.buttonSelectAll_Click);
             // buttonClearAll
-            this.buttonClearAll.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonClearAll.ForeColor = System.Drawing.Color.Black;
-            this.buttonClearAll.Location  = new System.Drawing.Point(360, 26);
-            this.buttonClearAll.Name      = "buttonClearAll";
-            this.buttonClearAll.Size      = new System.Drawing.Size(140, 32);
-            this.buttonClearAll.TabIndex  = 6;
-            this.buttonClearAll.Text      = "Снять все";
-            this.buttonClearAll.Click    += new System.EventHandler(this.buttonClearAll_Click);
+            this.buttonClearAll.FlatStyle  = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonClearAll.ForeColor  = System.Drawing.Color.Black;
+            this.buttonClearAll.Location   = new System.Drawing.Point(128, 22);
+            this.buttonClearAll.Name       = "buttonClearAll";
+            this.buttonClearAll.Size       = new System.Drawing.Size(110, 23);
+            this.buttonClearAll.TabIndex   = 6;
+            this.buttonClearAll.Text       = "Снять все";
+            this.buttonClearAll.Click     += new System.EventHandler(this.buttonClearAll_Click);
             // checkedListClasses
             this.checkedListClasses.BorderStyle       = System.Windows.Forms.BorderStyle.FixedSingle;
             this.checkedListClasses.CheckOnClick      = true;
             this.checkedListClasses.FormattingEnabled = true;
-            this.checkedListClasses.Location          = new System.Drawing.Point(12, 68);
+            this.checkedListClasses.Location          = new System.Drawing.Point(10, 52);
             this.checkedListClasses.MultiColumn       = true;
-            this.checkedListClasses.ColumnWidth       = 110;
+            this.checkedListClasses.ColumnWidth       = 88;
             this.checkedListClasses.Name              = "checkedListClasses";
-            this.checkedListClasses.Size              = new System.Drawing.Size(566, 250);
+            this.checkedListClasses.Size              = new System.Drawing.Size(510, 184);
             this.checkedListClasses.TabIndex          = 7;
             //
             // labelStatus
             //
             this.labelStatus.AutoSize  = false;
-            this.labelStatus.Font      = new System.Drawing.Font("Segoe UI", 11F, System.Drawing.FontStyle.Bold);
-            this.labelStatus.Location  = new System.Drawing.Point(14, 524);
+            this.labelStatus.ForeColor = System.Drawing.Color.Gray;
+            this.labelStatus.Location  = new System.Drawing.Point(8, 456);
             this.labelStatus.Name      = "labelStatus";
-            this.labelStatus.Size      = new System.Drawing.Size(592, 30);
+            this.labelStatus.Size      = new System.Drawing.Size(532, 18);
             this.labelStatus.Text      = "";
             //
             // buttonAdd
             //
             this.buttonAdd.BackColor = System.Drawing.Color.SteelBlue;
             this.buttonAdd.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonAdd.Font      = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold);
+            this.buttonAdd.Font      = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.buttonAdd.ForeColor = System.Drawing.Color.White;
-            this.buttonAdd.Location  = new System.Drawing.Point(14, 558);
+            this.buttonAdd.Location  = new System.Drawing.Point(8, 478);
             this.buttonAdd.Name      = "buttonAdd";
-            this.buttonAdd.Size      = new System.Drawing.Size(380, 44);
+            this.buttonAdd.Size      = new System.Drawing.Size(378, 26);
             this.buttonAdd.TabIndex  = 8;
             this.buttonAdd.Text      = "+ Добавить для выбранных классов";
             this.buttonAdd.UseVisualStyleBackColor = false;
@@ -191,20 +189,21 @@ namespace testing
             // buttonClose
             //
             this.buttonClose.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonClose.Location  = new System.Drawing.Point(404, 558);
+            this.buttonClose.Location  = new System.Drawing.Point(394, 478);
             this.buttonClose.Name      = "buttonClose";
-            this.buttonClose.Size      = new System.Drawing.Size(200, 44);
+            this.buttonClose.Size      = new System.Drawing.Size(148, 26);
             this.buttonClose.TabIndex  = 9;
             this.buttonClose.Text      = "Закрыть";
             this.buttonClose.Click    += new System.EventHandler(this.buttonClose_Click);
             //
             // BulkWorkloadForm
             //
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize          = new System.Drawing.Size(620, 614);
+            this.ClientSize          = new System.Drawing.Size(548, 514);
             this.Controls.Add(this.groupStep1);
             this.Controls.Add(this.groupStep2);
+            this.Controls.Add(this.groupStep3);
             this.Controls.Add(this.labelStatus);
             this.Controls.Add(this.buttonAdd);
             this.Controls.Add(this.buttonClose);
@@ -215,26 +214,26 @@ namespace testing
             this.StartPosition   = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text            = "Массовое заполнение нагрузки";
             this.Load           += new System.EventHandler(this.BulkWorkloadForm_Load);
-            this.groupStep1.ResumeLayout(false);
-            this.groupStep1.PerformLayout();
-            this.groupStep2.ResumeLayout(false);
-            this.groupStep2.PerformLayout();
+            this.groupStep1.ResumeLayout(false); this.groupStep1.PerformLayout();
+            this.groupStep2.ResumeLayout(false); this.groupStep2.PerformLayout();
+            this.groupStep3.ResumeLayout(false); this.groupStep3.PerformLayout();
             this.ResumeLayout(false);
         }
         #endregion
 
         private System.Windows.Forms.GroupBox        groupStep1;
-        private System.Windows.Forms.Label           labelTeacher;
-        private System.Windows.Forms.ComboBox        comboTeacher;
+        private System.Windows.Forms.Label           labelGrade;
+        private System.Windows.Forms.ComboBox        comboGrade;
         private System.Windows.Forms.Label           labelSubject;
         private System.Windows.Forms.ComboBox        comboSubject;
+        private System.Windows.Forms.GroupBox        groupStep2;
+        private System.Windows.Forms.Label           labelTeacher;
+        private System.Windows.Forms.ComboBox        comboTeacher;
         private System.Windows.Forms.Label           labelHours;
         private System.Windows.Forms.TextBox         textHours;
         private System.Windows.Forms.Label           labelSubgroup;
         private System.Windows.Forms.ComboBox        comboSubgroup;
-        private System.Windows.Forms.GroupBox        groupStep2;
-        private System.Windows.Forms.Label           labelGrade;
-        private System.Windows.Forms.ComboBox        comboGrade;
+        private System.Windows.Forms.GroupBox        groupStep3;
         private System.Windows.Forms.Button          buttonSelectAll;
         private System.Windows.Forms.Button          buttonClearAll;
         private System.Windows.Forms.CheckedListBox  checkedListClasses;

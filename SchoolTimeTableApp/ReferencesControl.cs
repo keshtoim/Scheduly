@@ -14,6 +14,7 @@ namespace testing
                 System.ComponentModel.LicenseUsageMode.Designtime) return;
             LoadTeachers();
             LoadSubjects();
+            LoadSubjectParallel();
             LoadClassrooms();
             LoadClasses();
         }
@@ -135,6 +136,103 @@ namespace testing
                 }
                 catch (Exception ex) { DbHelper.ShowError(ex); }
             }
+        }
+
+        // ── Предметы по параллелям ─────────────────────────────────────────
+        private void LoadSubjectParallel()
+        {
+            gridSubjPar.DataSource = DbHelper.Query(
+                "SELECT sbp.ID_предмета_со_сложностью, " +
+                "       pc.Параллель, " +
+                "       sub.Название AS \"Предмет\", " +
+                "       d.Сложность " +
+                "FROM SubjectByParallel sbp " +
+                "JOIN Subjects      sub ON sbp.ID_предмета  = sub.ID_предмета " +
+                "JOIN ParallelClass pc  ON sbp.ID_параллели = pc.ID_параллели_класса " +
+                "JOIN Difficulty    d   ON sbp.ID_сложности = d.ID_сложности " +
+                "ORDER BY pc.Параллель, sub.Название");
+            if (gridSubjPar.Columns.Contains("ID_предмета_со_сложностью"))
+                gridSubjPar.Columns["ID_предмета_со_сложностью"].Visible = false;
+
+            DataTable dtGrades = DbHelper.Query(
+                "SELECT ID_параллели_класса, Параллель AS name FROM ParallelClass ORDER BY Параллель");
+            comboSubjParGrade.DisplayMember = "name";
+            comboSubjParGrade.ValueMember   = "ID_параллели_класса";
+            comboSubjParGrade.DataSource    = dtGrades;
+
+            DataTable dtSub = DbHelper.Query(
+                "SELECT ID_предмета, Название AS name FROM Subjects ORDER BY Название");
+            comboSubjParSubject.DisplayMember = "name";
+            comboSubjParSubject.ValueMember   = "ID_предмета";
+            comboSubjParSubject.DataSource    = dtSub;
+        }
+
+        private void buttonAddSubjPar_Click(object sender, EventArgs e)
+        {
+            if (comboSubjParGrade.SelectedValue == null ||
+                comboSubjParSubject.SelectedValue == null) return;
+            if (!decimal.TryParse(txtSubjParDiff.Text.Trim(), out decimal diffValue) || diffValue <= 0)
+            {
+                MessageBox.Show("Укажите корректное значение сложности (число > 0).",
+                    "Внимание", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            try
+            {
+                object diffIdObj = DbHelper.Scalar(
+                    "SELECT ID_сложности FROM Difficulty WHERE Сложность = @d",
+                    p => p.AddWithValue("@d", diffValue));
+                int diffId;
+                if (diffIdObj == null || diffIdObj == DBNull.Value)
+                {
+                    DbHelper.Execute("INSERT INTO Difficulty (Сложность) VALUES (@d)",
+                        p => p.AddWithValue("@d", diffValue));
+                    diffId = Convert.ToInt32(DbHelper.Scalar("SELECT last_insert_rowid()"));
+                }
+                else diffId = Convert.ToInt32(diffIdObj);
+
+                DbHelper.Execute(
+                    "INSERT INTO SubjectByParallel (ID_предмета, ID_параллели, ID_сложности) " +
+                    "VALUES (@s, @p, @d)",
+                    p => {
+                        p.AddWithValue("@s", comboSubjParSubject.SelectedValue);
+                        p.AddWithValue("@p", comboSubjParGrade.SelectedValue);
+                        p.AddWithValue("@d", diffId);
+                    });
+                txtSubjParDiff.Clear();
+                LoadSubjectParallel();
+            }
+            catch (Exception ex) { DbHelper.ShowError(ex); }
+        }
+
+        private void buttonDeleteSubjPar_Click(object sender, EventArgs e)
+        {
+            DeleteSelected(gridSubjPar, "SubjectByParallel",
+                "ID_предмета_со_сложностью", LoadSubjectParallel);
+        }
+
+        private void gridSubjPar_CellDoubleClick(object sender, System.Windows.Forms.DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+            var dt = gridSubjPar.DataSource as DataTable;
+            if (dt == null) return;
+            var row = dt.Rows[e.RowIndex];
+            // Pre-fill controls from the selected row
+            int parallelId = Convert.ToInt32(DbHelper.Scalar(
+                "SELECT ID_параллели_класса FROM ParallelClass WHERE Параллель = @p",
+                p => p.AddWithValue("@p", row["Параллель"])));
+            int subjectId = Convert.ToInt32(DbHelper.Scalar(
+                "SELECT ID_предмета FROM Subjects WHERE Название = @n",
+                p => p.AddWithValue("@n", row["Предмет"].ToString())));
+            comboSubjParGrade.SelectedValue   = parallelId;
+            comboSubjParSubject.SelectedValue = subjectId;
+            txtSubjParDiff.Text = row["Сложность"].ToString();
+        }
+
+        private void txtSubjParDiff_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+        {
+            if (e.KeyCode == System.Windows.Forms.Keys.Enter)
+            { e.SuppressKeyPress = true; buttonAddSubjPar_Click(null, EventArgs.Empty); }
         }
 
         // ── Кабинеты ────────────────────────────────────────────────────────

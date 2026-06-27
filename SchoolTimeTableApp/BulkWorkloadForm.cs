@@ -7,6 +7,7 @@ namespace testing
     public partial class BulkWorkloadForm : Form
     {
         private DataTable _classesTable;
+        private DataTable _subjectsAll;   // все предметы из SubjectByParallel
 
         public BulkWorkloadForm()
         {
@@ -16,13 +17,15 @@ namespace testing
         private void BulkWorkloadForm_Load(object sender, EventArgs e)
         {
             LoadTeachers();
-            LoadSubjects();
-            LoadClasses();
+            LoadSubjects();   // заполняет _subjectsAll, привязывает comboSubject
+            LoadClasses();    // заполняет _classesTable, checkedListClasses
 
             comboSubgroup.Items.AddRange(new[] { "Весь класс", "Подгруппа 1", "Подгруппа 2" });
             comboSubgroup.SelectedIndex = 0;
+            textHours.Text = "2";
 
-            comboGrade.Items.Add("— Параллель —");
+            // Параллель — первый выбор
+            comboGrade.Items.Add("Все");
             for (int g = 1; g <= 11; g++)
                 comboGrade.Items.Add(g.ToString());
             comboGrade.SelectedIndex = 0;
@@ -41,11 +44,10 @@ namespace testing
 
         private void LoadSubjects()
         {
-            DataTable dt = DbHelper.Query(
+            _subjectsAll = DbHelper.Query(
                 "SELECT sbp.ID_предмета_со_сложностью AS subject_id, " +
                 "       pc.Параллель                  AS grade, " +
-                "       sub.Название || ' (' || CAST(pc.Параллель AS TEXT) || " +
-                "       ' кл., сл.' || CAST(d.Сложность AS TEXT) || ')' AS name " +
+                "       sub.Название || ' (сл.' || CAST(d.Сложность AS TEXT) || ')' AS name " +
                 "FROM SubjectByParallel sbp " +
                 "JOIN Subjects      sub ON sbp.ID_предмета  = sub.ID_предмета " +
                 "JOIN ParallelClass pc  ON sbp.ID_параллели = pc.ID_параллели_класса " +
@@ -53,7 +55,7 @@ namespace testing
                 "ORDER BY sub.Название, pc.Параллель");
             comboSubject.DisplayMember = "name";
             comboSubject.ValueMember   = "subject_id";
-            comboSubject.DataSource    = dt;
+            comboSubject.DataSource    = _subjectsAll;
         }
 
         private void LoadClasses()
@@ -72,26 +74,29 @@ namespace testing
                 checkedListClasses.Items.Add(row["class_name"].ToString(), false);
         }
 
-        private void comboSubject_SelectedIndexChanged(object sender, EventArgs e)
+        // ─── Главный триггер: выбор параллели ─────────────────────────────
+        // Автоматически: фильтрует список предметов и отмечает классы параллели
+        private void comboGrade_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var drv = comboSubject.SelectedItem as DataRowView;
-            if (drv == null) return;
+            if (comboGrade.SelectedIndex <= 0)
+            {
+                // «Все» — показываем все предметы, не трогаем классы
+                comboSubject.DataSource = _subjectsAll;
+                return;
+            }
+            int grade = comboGrade.SelectedIndex; // индекс 1..11 = параллель 1..11
 
-            int grade = Convert.ToInt32(drv.Row["grade"]);
-            CheckByGrade(grade);
-        }
+            // Фильтруем предметы только для выбранной параллели
+            DataTable filtered = _subjectsAll.Clone();
+            foreach (DataRow row in _subjectsAll.Rows)
+                if (Convert.ToInt32(row["grade"]) == grade)
+                    filtered.ImportRow(row);
+            comboSubject.DataSource = filtered;
 
-        private void CheckByGrade(int grade)
-        {
+            // Автоматически отмечаем все классы этой параллели
             for (int i = 0; i < checkedListClasses.Items.Count; i++)
                 checkedListClasses.SetItemChecked(i,
                     Convert.ToInt32(_classesTable.Rows[i]["Параллель"]) == grade);
-        }
-
-        private void comboGrade_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (comboGrade.SelectedIndex <= 0) return;
-            CheckByGrade(comboGrade.SelectedIndex); // SelectedIndex 1..11 == grade 1..11
         }
 
         private void buttonSelectAll_Click(object sender, EventArgs e)
@@ -112,23 +117,11 @@ namespace testing
             labelStatus.Text = "";
 
             if (comboTeacher.SelectedValue == null || comboSubject.SelectedValue == null)
-            {
-                labelStatus.ForeColor = System.Drawing.Color.Crimson;
-                labelStatus.Text = "Выберите учителя и предмет.";
-                return;
-            }
+            { labelStatus.ForeColor = System.Drawing.Color.Crimson; labelStatus.Text = "Выберите учителя и предмет."; return; }
             if (!int.TryParse(textHours.Text.Trim(), out int hours) || hours <= 0)
-            {
-                labelStatus.ForeColor = System.Drawing.Color.Crimson;
-                labelStatus.Text = "Укажите корректное количество часов (целое > 0).";
-                return;
-            }
+            { labelStatus.ForeColor = System.Drawing.Color.Crimson; labelStatus.Text = "Укажите часов в неделю (целое > 0)."; return; }
             if (checkedListClasses.CheckedIndices.Count == 0)
-            {
-                labelStatus.ForeColor = System.Drawing.Color.Crimson;
-                labelStatus.Text = "Выберите хотя бы один класс.";
-                return;
-            }
+            { labelStatus.ForeColor = System.Drawing.Color.Crimson; labelStatus.Text = "Отметьте хотя бы один класс."; return; }
 
             int teacherId  = Convert.ToInt32(comboTeacher.SelectedValue);
             int subjectId  = Convert.ToInt32(comboSubject.SelectedValue);
@@ -154,22 +147,14 @@ namespace testing
                 }
                 catch (Exception ex)
                 {
-                    // "Такая нагрузка уже существует!" — ожидаемо, пропускаем
-                    if (ex.Message.Contains("существует"))
-                        skipped++;
-                    else
-                    {
-                        DbHelper.ShowError(ex, "sp_AddWorkload");
-                        break;
-                    }
+                    if (ex.Message.Contains("существует")) skipped++;
+                    else { DbHelper.ShowError(ex, "sp_AddWorkload"); break; }
                 }
             }
 
             string msg = $"Добавлено: {added}.";
             if (skipped > 0) msg += $" Пропущено (дубли): {skipped}.";
-            labelStatus.ForeColor = added > 0
-                ? System.Drawing.Color.SeaGreen
-                : System.Drawing.Color.Crimson;
+            labelStatus.ForeColor = added > 0 ? System.Drawing.Color.SeaGreen : System.Drawing.Color.Crimson;
             labelStatus.Text = msg;
         }
 
