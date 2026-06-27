@@ -26,10 +26,15 @@ namespace testing
             this.radioWeekAll        = new System.Windows.Forms.RadioButton();
             this.radioWeekOdd        = new System.Windows.Forms.RadioButton();
             this.radioWeekEven       = new System.Windows.Forms.RadioButton();
+            this.groupSubgroup       = new System.Windows.Forms.GroupBox();
+            this.radioSubAll         = new System.Windows.Forms.RadioButton();
+            this.radioSubGroup1      = new System.Windows.Forms.RadioButton();
+            this.radioSubGroup2      = new System.Windows.Forms.RadioButton();
             this.buttonSave          = new System.Windows.Forms.Button();
             this.buttonDelete        = new System.Windows.Forms.Button();
             this.buttonCancel        = new System.Windows.Forms.Button();
             this.groupWeekParity.SuspendLayout();
+            this.groupSubgroup.SuspendLayout();
             this.SuspendLayout();
             // labelSlotTitle
             this.labelSlotTitle.AutoSize  = true;
@@ -147,11 +152,41 @@ namespace testing
             this.radioWeekEven.Size     = new System.Drawing.Size(70, 17);
             this.radioWeekEven.TabIndex = 2;
             this.radioWeekEven.Text     = "Чётные";
+            // groupSubgroup — выбор подгруппы
+            this.groupSubgroup.Controls.Add(this.radioSubAll);
+            this.groupSubgroup.Controls.Add(this.radioSubGroup1);
+            this.groupSubgroup.Controls.Add(this.radioSubGroup2);
+            this.groupSubgroup.Location = new System.Drawing.Point(12, 270);
+            this.groupSubgroup.Name     = "groupSubgroup";
+            this.groupSubgroup.Size     = new System.Drawing.Size(420, 48);
+            this.groupSubgroup.TabIndex = 14;
+            this.groupSubgroup.TabStop  = false;
+            this.groupSubgroup.Text     = "Подгруппа";
+            // radioSubAll — весь класс
+            this.radioSubAll.AutoSize = true;
+            this.radioSubAll.Checked  = true;
+            this.radioSubAll.Location = new System.Drawing.Point(10, 20);
+            this.radioSubAll.Name     = "radioSubAll";
+            this.radioSubAll.TabIndex = 0;
+            this.radioSubAll.TabStop  = true;
+            this.radioSubAll.Text     = "Весь класс";
+            // radioSubGroup1 — первая подгруппа
+            this.radioSubGroup1.AutoSize = true;
+            this.radioSubGroup1.Location = new System.Drawing.Point(148, 20);
+            this.radioSubGroup1.Name     = "radioSubGroup1";
+            this.radioSubGroup1.TabIndex = 1;
+            this.radioSubGroup1.Text     = "Подгруппа 1";
+            // radioSubGroup2 — вторая подгруппа
+            this.radioSubGroup2.AutoSize = true;
+            this.radioSubGroup2.Location = new System.Drawing.Point(260, 20);
+            this.radioSubGroup2.Name     = "radioSubGroup2";
+            this.radioSubGroup2.TabIndex = 2;
+            this.radioSubGroup2.Text     = "Подгруппа 2";
             // buttonSave
             this.buttonSave.BackColor = System.Drawing.Color.SteelBlue;
             this.buttonSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonSave.ForeColor = System.Drawing.Color.White;
-            this.buttonSave.Location  = new System.Drawing.Point(12, 274);
+            this.buttonSave.Location  = new System.Drawing.Point(12, 330);
             this.buttonSave.Name      = "buttonSave";
             this.buttonSave.Size      = new System.Drawing.Size(110, 28);
             this.buttonSave.TabIndex  = 11;
@@ -161,7 +196,7 @@ namespace testing
             // buttonDelete
             this.buttonDelete.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonDelete.ForeColor = System.Drawing.Color.Crimson;
-            this.buttonDelete.Location  = new System.Drawing.Point(136, 274);
+            this.buttonDelete.Location  = new System.Drawing.Point(136, 330);
             this.buttonDelete.Name      = "buttonDelete";
             this.buttonDelete.Size      = new System.Drawing.Size(120, 28);
             this.buttonDelete.TabIndex  = 12;
@@ -170,7 +205,7 @@ namespace testing
             this.buttonDelete.Click += new System.EventHandler(this.buttonDelete_Click);
             // buttonCancel
             this.buttonCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonCancel.Location  = new System.Drawing.Point(310, 274);
+            this.buttonCancel.Location  = new System.Drawing.Point(310, 330);
             this.buttonCancel.Name      = "buttonCancel";
             this.buttonCancel.Size      = new System.Drawing.Size(118, 28);
             this.buttonCancel.TabIndex  = 13;
@@ -180,7 +215,7 @@ namespace testing
             // CellEditForm
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize          = new System.Drawing.Size(444, 314);
+            this.ClientSize          = new System.Drawing.Size(444, 370);
             this.Controls.Add(this.labelSlotTitle);
             this.Controls.Add(this.labelSlot);
             this.Controls.Add(this.labelSubject);
@@ -192,6 +227,7 @@ namespace testing
             this.Controls.Add(this.comboClassroom);
             this.Controls.Add(this.buttonAddClassroom);
             this.Controls.Add(this.groupWeekParity);
+            this.Controls.Add(this.groupSubgroup);
             this.Controls.Add(this.buttonSave);
             this.Controls.Add(this.buttonDelete);
             this.Controls.Add(this.buttonCancel);
@@ -204,6 +240,8 @@ namespace testing
             this.Load += new System.EventHandler(this.CellEditForm_Load);
             this.groupWeekParity.ResumeLayout(false);
             this.groupWeekParity.PerformLayout();
+            this.groupSubgroup.ResumeLayout(false);
+            this.groupSubgroup.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
         }
@@ -223,6 +261,10 @@ namespace testing
         private System.Windows.Forms.RadioButton radioWeekAll;
         private System.Windows.Forms.RadioButton radioWeekOdd;
         private System.Windows.Forms.RadioButton radioWeekEven;
+        private System.Windows.Forms.GroupBox    groupSubgroup;
+        private System.Windows.Forms.RadioButton radioSubAll;
+        private System.Windows.Forms.RadioButton radioSubGroup1;
+        private System.Windows.Forms.RadioButton radioSubGroup2;
         private System.Windows.Forms.Button      buttonSave;
         private System.Windows.Forms.Button      buttonDelete;
         private System.Windows.Forms.Button      buttonCancel;

@@ -53,12 +53,19 @@ namespace testing
                 else if (parity == 2) radioWeekEven.Checked = true;
                 else                  radioWeekAll.Checked  = true;
 
+                // Предвыбираем подгруппу
+                object sub = _existing["Подгруппа"];
+                if (sub == DBNull.Value || sub == null)     radioSubAll.Checked    = true;
+                else if (Convert.ToInt32(sub) == 1)         radioSubGroup1.Checked = true;
+                else                                         radioSubGroup2.Checked = true;
+
                 buttonDelete.Visible = true;
             }
             else
             {
                 buttonDelete.Visible = false;
             }
+            ShowSlotTooltip();
         }
 
         private void LoadSubjects()
@@ -194,6 +201,8 @@ namespace testing
             int teacherId         = Convert.ToInt32(comboTeacher.SelectedValue);
             int classroomId       = Convert.ToInt32(comboClassroom.SelectedValue);
             int weekParity        = radioWeekOdd.Checked ? 1 : (radioWeekEven.Checked ? 2 : 0);
+            object subgroup       = radioSubGroup1.Checked ? (object)1 :
+                                    radioSubGroup2.Checked ? (object)2 : DBNull.Value;
 
             // Проверка лимита уроков
             string limitMsg = CheckDayLimit();
@@ -214,7 +223,7 @@ namespace testing
             }
 
             // Находим или создаём нагрузку
-            int workloadId = ResolveWorkloadId(subjectParallelId, teacherId);
+            int workloadId = ResolveWorkloadId(subjectParallelId, teacherId, subgroup);
             if (workloadId < 0) return;
 
             try
@@ -246,16 +255,21 @@ namespace testing
             catch (Exception ex) { DbHelper.ShowError(ex, "Сохранение урока"); }
         }
 
-        private int ResolveWorkloadId(int subjectParallelId, int teacherId)
+        private int ResolveWorkloadId(int subjectParallelId, int teacherId, object subgroup)
         {
             try
             {
+                bool noSub = subgroup == DBNull.Value;
+                string subCond = noSub ? "Подгруппа IS NULL" : "Подгруппа = @sub";
                 DataTable dt = DbHelper.Query(
                     "SELECT ID_нагрузки FROM Workload " +
-                    "WHERE ID_класса = @c AND ID_предмета_параллели = @s AND ID_учителя = @t",
-                    p => { p.AddWithValue("@c", _classId);
-                           p.AddWithValue("@s", subjectParallelId);
-                           p.AddWithValue("@t", teacherId); });
+                    "WHERE ID_класса = @c AND ID_предмета_параллели = @s AND ID_учителя = @t AND " + subCond,
+                    p => {
+                        p.AddWithValue("@c", _classId);
+                        p.AddWithValue("@s", subjectParallelId);
+                        p.AddWithValue("@t", teacherId);
+                        if (!noSub) p.AddWithValue("@sub", subgroup);
+                    });
 
                 if (dt.Rows.Count > 0)
                     return Convert.ToInt32(dt.Rows[0]["ID_нагрузки"]);
@@ -266,11 +280,40 @@ namespace testing
                            p.AddWithValue("@ID_класса",                _classId);
                            p.AddWithValue("@ID_предмета_параллели",    subjectParallelId);
                            p.AddWithValue("@Количество_часов_в_неделю", (byte)1);
-                           p.AddWithValue("@Подгруппа", System.DBNull.Value); });
+                           p.AddWithValue("@Подгруппа",                subgroup); });
 
                 return dt2.Rows.Count > 0 ? Convert.ToInt32(dt2.Rows[0]["ID_нагрузки"]) : -1;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Определение нагрузки"); return -1; }
+        }
+
+        private void ShowSlotTooltip()
+        {
+            try
+            {
+                DataTable dt = DbHelper.Query(
+                    "SELECT Предмет, ФИО_учителя, Кабинет, Пометка_недели, Пометка_подгруппы " +
+                    "FROM vw_Schedule WHERE ID_класса = @cid AND ID_дня_недели = @d AND Номер_урока = @l" +
+                    (_existing != null ? " AND ID_расписания <> @sid" : ""),
+                    p => {
+                        p.AddWithValue("@cid", _classId);
+                        p.AddWithValue("@d",   _day);
+                        p.AddWithValue("@l",   _lesson);
+                        if (_existing != null) p.AddWithValue("@sid", _existing["ID_расписания"]);
+                    });
+                if (dt.Rows.Count == 0) return;
+                var sb = new System.Text.StringBuilder("Уже в этом слоте:");
+                foreach (DataRow r in dt.Rows)
+                {
+                    string pfx = (r["Пометка_недели"].ToString() + r["Пометка_подгруппы"].ToString()).Trim();
+                    sb.AppendFormat("\n• {0}{1} — {2}, каб.{3}",
+                        pfx.Length > 0 ? pfx + " " : "",
+                        r["Предмет"], r["ФИО_учителя"], r["Кабинет"]);
+                }
+                new System.Windows.Forms.ToolTip().SetToolTip(labelSlot, sb.ToString());
+                labelSlot.Cursor = System.Windows.Forms.Cursors.Help;
+            }
+            catch { }
         }
 
         private string CheckDayLimit()
