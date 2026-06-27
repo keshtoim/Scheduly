@@ -13,6 +13,7 @@ namespace testing
         private void InitializeComponent()
         {
             this.panelAdd        = new System.Windows.Forms.Panel();
+            this.buttonBulk      = new System.Windows.Forms.Button();
             this.labelClass      = new System.Windows.Forms.Label();
             this.comboClass      = new System.Windows.Forms.ComboBox();
             this.labelSubject    = new System.Windows.Forms.Label();
@@ -49,6 +50,7 @@ namespace testing
             this.panelAdd.Controls.Add(this.comboSubgroup);
             this.panelAdd.Controls.Add(this.buttonAdd);
             this.panelAdd.Controls.Add(this.buttonDelete);
+            this.panelAdd.Controls.Add(this.buttonBulk);
             this.panelAdd.Dock     = System.Windows.Forms.DockStyle.Top;
             this.panelAdd.Location = new System.Drawing.Point(0, 0);
             this.panelAdd.Name     = "panelAdd";
@@ -121,6 +123,16 @@ namespace testing
             this.buttonDelete.Text      = "Удалить";
             this.buttonDelete.UseVisualStyleBackColor = true;
             this.buttonDelete.Click += new System.EventHandler(this.buttonDelete_Click);
+            // buttonBulk — быстрое массовое заполнение нагрузки
+            this.buttonBulk.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonBulk.ForeColor = System.Drawing.Color.DarkSlateBlue;
+            this.buttonBulk.Location  = new System.Drawing.Point(250, 47);
+            this.buttonBulk.Name      = "buttonBulk";
+            this.buttonBulk.Size      = new System.Drawing.Size(160, 26);
+            this.buttonBulk.TabIndex  = 11;
+            this.buttonBulk.Text      = "Массовое заполнение...";
+            this.buttonBulk.UseVisualStyleBackColor = true;
+            this.buttonBulk.Click += new System.EventHandler(this.buttonBulk_Click);
             // labelSubgroup — вторая строка панели (Y=50)
             this.labelSubgroup.AutoSize = true;
             this.labelSubgroup.Location = new System.Drawing.Point(8, 53);
@@ -200,6 +212,7 @@ namespace testing
         private System.Windows.Forms.ComboBox     comboSubgroup;
         private System.Windows.Forms.Button       buttonAdd;
         private System.Windows.Forms.Button       buttonDelete;
+        private System.Windows.Forms.Button       buttonBulk;
         private System.Windows.Forms.Panel        panelSearch;
         private System.Windows.Forms.Label        labelSearch;
         private System.Windows.Forms.TextBox      textSearch;

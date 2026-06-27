@@ -443,6 +443,81 @@ namespace testing
             return Color.White;
         }
 
+        private void dataGrid_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex <= 0) return;
+            if ((string)dataGrid.Rows[e.RowIndex].Tag == "diffRow") return;
+
+            var entries = dataGrid.Rows[e.RowIndex].Cells[e.ColumnIndex].Tag as List<DataRow>;
+            if (entries == null || entries.Count <= 1) return; // обычная отрисовка
+
+            e.Handled = true;
+
+            // Фон ячейки
+            e.Graphics.FillRectangle(SystemBrushes.Window,
+                new System.Drawing.Rectangle(e.CellBounds.X, e.CellBounds.Y, e.CellBounds.Width - 1, e.CellBounds.Height - 1));
+
+            bool isSelected = (e.State & DataGridViewElementStates.Selected) != 0;
+            bool isConflict = e.CellStyle.BackColor == Color.MistyRose;
+            int partH = e.CellBounds.Height / entries.Count;
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                var row = entries[i];
+                int y = e.CellBounds.Y + i * partH;
+                int h = (i == entries.Count - 1)
+                    ? (e.CellBounds.Y + e.CellBounds.Height - 1 - y)
+                    : partH;
+                var partRect = new System.Drawing.Rectangle(e.CellBounds.X + 1, y, e.CellBounds.Width - 2, h);
+
+                // Цвет фона по чётности недели
+                Color bg;
+                if (isConflict)
+                    bg = Color.MistyRose;
+                else
+                {
+                    int parity = Convert.ToInt32(row["Чётность_недели"]);
+                    bg = parity == 1 ? ColorOddWeek : parity == 2 ? ColorEvenWeek : Color.White;
+                }
+                using (var brush = new System.Drawing.SolidBrush(bg))
+                    e.Graphics.FillRectangle(brush, partRect);
+
+                // Разделитель между секциями
+                if (i > 0)
+                    using (var pen = new System.Drawing.Pen(Color.FromArgb(160, 160, 200)))
+                        e.Graphics.DrawLine(pen, e.CellBounds.X + 2, y, e.CellBounds.Right - 3, y);
+
+                // Текст
+                string week = _weekView == 0 ? (row["Пометка_недели"]?.ToString() ?? "") : "";
+                string sub  = row["Пометка_подгруппы"]?.ToString() ?? "";
+                string pfx  = (week + sub).Trim();
+                string text = (pfx.Length > 0 ? pfx + " " : "")
+                    + row["Предмет"] + "\n"
+                    + row["ФИО_учителя"] + "/" + row["Кабинет"];
+
+                Color fg = isConflict ? Color.DarkRed : Color.Black;
+                var textRect = new System.Drawing.Rectangle(
+                    partRect.X + 3, partRect.Y + 2, partRect.Width - 6, partRect.Height - 4);
+                TextRenderer.DrawText(e.Graphics, text,
+                    e.CellStyle.Font ?? dataGrid.DefaultCellStyle.Font,
+                    textRect, fg,
+                    TextFormatFlags.WordBreak | TextFormatFlags.Left | TextFormatFlags.Top);
+            }
+
+            // Выделение (полупрозрачный оверлей)
+            if (isSelected)
+                using (var selBrush = new System.Drawing.SolidBrush(Color.FromArgb(60, 0, 120, 215)))
+                    e.Graphics.FillRectangle(selBrush,
+                        new System.Drawing.Rectangle(e.CellBounds.X + 1, e.CellBounds.Y,
+                            e.CellBounds.Width - 2, e.CellBounds.Height - 1));
+
+            // Граница ячейки
+            using (var gridPen = new System.Drawing.Pen(dataGrid.GridColor))
+                e.Graphics.DrawRectangle(gridPen,
+                    new System.Drawing.Rectangle(e.CellBounds.X, e.CellBounds.Y,
+                        e.CellBounds.Width - 1, e.CellBounds.Height - 1));
+        }
+
         private void dataGrid_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0 || e.ColumnIndex <= 0 || _selectedClassId < 0) return;

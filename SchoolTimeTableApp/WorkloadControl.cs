@@ -146,6 +146,13 @@ namespace testing
             catch (Exception ex) { DbHelper.ShowError(ex, "Удаление нагрузки"); }
         }
 
+        private void buttonBulk_Click(object sender, EventArgs e)
+        {
+            using (var form = new BulkWorkloadForm())
+                form.ShowDialog(this.ParentForm);
+            LoadWorkloadGrid();
+        }
+
         private void textSearch_TextChanged(object sender, EventArgs e)
         {
             string query = textSearch.Text.Trim();
