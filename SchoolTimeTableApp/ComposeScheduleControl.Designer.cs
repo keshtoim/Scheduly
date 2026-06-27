@@ -25,6 +25,11 @@ namespace testing
             this.picEmpty = new System.Windows.Forms.PictureBox();
             this.labelLegendEmpty = new System.Windows.Forms.Label();
             this.splitCenter = new System.Windows.Forms.SplitContainer();
+            this.panelWeekSwitch = new System.Windows.Forms.Panel();
+            this.labelWeekSwitchTitle = new System.Windows.Forms.Label();
+            this.radioWeekViewAll = new System.Windows.Forms.RadioButton();
+            this.radioWeekViewOdd = new System.Windows.Forms.RadioButton();
+            this.radioWeekViewEven = new System.Windows.Forms.RadioButton();
             this.dataGrid = new System.Windows.Forms.DataGridView();
             this.splitRight = new System.Windows.Forms.SplitContainer();
             this.panelInfo = new System.Windows.Forms.Panel();
@@ -59,6 +64,7 @@ namespace testing
             this.splitCenter.Panel1.SuspendLayout();
             this.splitCenter.Panel2.SuspendLayout();
             this.splitCenter.SuspendLayout();
+            this.panelWeekSwitch.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGrid)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitRight)).BeginInit();
             this.splitRight.Panel1.SuspendLayout();
@@ -206,7 +212,49 @@ namespace testing
             this.splitCenter.SplitterDistance = 780;
             this.splitCenter.TabIndex = 0;
             this.splitCenter.Panel1.Controls.Add(this.dataGrid);
+            this.splitCenter.Panel1.Controls.Add(this.panelWeekSwitch);
             this.splitCenter.Panel2.Controls.Add(this.splitRight);
+
+            // panelWeekSwitch — переключатель отображения по неделям
+            this.panelWeekSwitch.BackColor = System.Drawing.Color.FromArgb(240, 248, 255);
+            this.panelWeekSwitch.Controls.Add(this.labelWeekSwitchTitle);
+            this.panelWeekSwitch.Controls.Add(this.radioWeekViewAll);
+            this.panelWeekSwitch.Controls.Add(this.radioWeekViewOdd);
+            this.panelWeekSwitch.Controls.Add(this.radioWeekViewEven);
+            this.panelWeekSwitch.Dock = System.Windows.Forms.DockStyle.Top;
+            this.panelWeekSwitch.Name = "panelWeekSwitch";
+            this.panelWeekSwitch.Size = new System.Drawing.Size(780, 32);
+            this.panelWeekSwitch.TabIndex = 1;
+            // labelWeekSwitchTitle
+            this.labelWeekSwitchTitle.AutoSize = true;
+            this.labelWeekSwitchTitle.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Bold);
+            this.labelWeekSwitchTitle.ForeColor = System.Drawing.Color.SteelBlue;
+            this.labelWeekSwitchTitle.Location = new System.Drawing.Point(6, 8);
+            this.labelWeekSwitchTitle.Name = "labelWeekSwitchTitle";
+            this.labelWeekSwitchTitle.Text = "Показать:";
+            // radioWeekViewAll
+            this.radioWeekViewAll.AutoSize = true;
+            this.radioWeekViewAll.Checked = true;
+            this.radioWeekViewAll.Location = new System.Drawing.Point(80, 7);
+            this.radioWeekViewAll.Name = "radioWeekViewAll";
+            this.radioWeekViewAll.TabIndex = 0;
+            this.radioWeekViewAll.TabStop = true;
+            this.radioWeekViewAll.Text = "Обе недели";
+            this.radioWeekViewAll.CheckedChanged += new System.EventHandler(this.radioWeekView_CheckedChanged);
+            // radioWeekViewOdd
+            this.radioWeekViewOdd.AutoSize = true;
+            this.radioWeekViewOdd.Location = new System.Drawing.Point(190, 7);
+            this.radioWeekViewOdd.Name = "radioWeekViewOdd";
+            this.radioWeekViewOdd.TabIndex = 1;
+            this.radioWeekViewOdd.Text = "Нечётная неделя";
+            this.radioWeekViewOdd.CheckedChanged += new System.EventHandler(this.radioWeekView_CheckedChanged);
+            // radioWeekViewEven
+            this.radioWeekViewEven.AutoSize = true;
+            this.radioWeekViewEven.Location = new System.Drawing.Point(330, 7);
+            this.radioWeekViewEven.Name = "radioWeekViewEven";
+            this.radioWeekViewEven.TabIndex = 2;
+            this.radioWeekViewEven.Text = "Чётная неделя";
+            this.radioWeekViewEven.CheckedChanged += new System.EventHandler(this.radioWeekView_CheckedChanged);
 
             // dataGrid
             this.dataGrid.AllowUserToAddRows = false;
@@ -401,6 +449,8 @@ namespace testing
             ((System.ComponentModel.ISupportInitialize)(this.picConflict)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picNormal)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.picEmpty)).EndInit();
+            this.panelWeekSwitch.ResumeLayout(false);
+            this.panelWeekSwitch.PerformLayout();
             this.splitCenter.Panel1.ResumeLayout(false);
             this.splitCenter.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitCenter)).EndInit();
@@ -430,6 +480,11 @@ namespace testing
         private System.Windows.Forms.PictureBox picEmpty;
         private System.Windows.Forms.Label labelLegendEmpty;
         private System.Windows.Forms.SplitContainer splitCenter;
+        private System.Windows.Forms.Panel panelWeekSwitch;
+        private System.Windows.Forms.Label labelWeekSwitchTitle;
+        private System.Windows.Forms.RadioButton radioWeekViewAll;
+        private System.Windows.Forms.RadioButton radioWeekViewOdd;
+        private System.Windows.Forms.RadioButton radioWeekViewEven;
         private System.Windows.Forms.DataGridView dataGrid;
         private System.Windows.Forms.SplitContainer splitRight;
         private System.Windows.Forms.Panel panelInfo;

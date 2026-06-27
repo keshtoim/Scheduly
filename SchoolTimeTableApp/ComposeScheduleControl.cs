@@ -12,6 +12,11 @@ namespace testing
             { "", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница" };
         private const int MAX_LESSONS = 8;
         private int _selectedClassId = -1;
+        private int _weekView = 0; // 0=обе, 1=нечётная, 2=чётная
+
+        // Цвета чётности недели
+        private static readonly Color ColorOddWeek  = Color.FromArgb(218, 234, 255); // голубой — нечётные
+        private static readonly Color ColorEvenWeek = Color.FromArgb(235, 218, 255); // лиловый — чётные
 
         // Цвета сложности (не совпадают с MistyRose конфликтов)
         private static readonly Color ColorEasy   = Color.FromArgb(220, 255, 220); // светло-зелёный  1-3
@@ -30,7 +35,31 @@ namespace testing
         {
             if (System.ComponentModel.LicenseManager.UsageMode ==
                 System.ComponentModel.LicenseUsageMode.Designtime) return;
+            AddWeekLegendItems();
             LoadClasses();
+        }
+
+        private void AddWeekLegendItems()
+        {
+            int y = panelLegend.Controls[panelLegend.Controls.Count - 1].Bottom + 8;
+
+            var picOdd = new System.Windows.Forms.PictureBox
+                { BackColor = ColorOddWeek, BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle,
+                  Location = new System.Drawing.Point(8, y), Size = new System.Drawing.Size(16, 16) };
+            var lblOdd = new System.Windows.Forms.Label
+                { AutoSize = true, Location = new System.Drawing.Point(28, y + 2),
+                  Text = "Нечётная неделя" };
+
+            int y2 = y + 24;
+            var picEven = new System.Windows.Forms.PictureBox
+                { BackColor = ColorEvenWeek, BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle,
+                  Location = new System.Drawing.Point(8, y2), Size = new System.Drawing.Size(16, 16) };
+            var lblEven = new System.Windows.Forms.Label
+                { AutoSize = true, Location = new System.Drawing.Point(28, y2 + 2),
+                  Text = "Чётная неделя" };
+
+            panelLegend.Controls.AddRange(new System.Windows.Forms.Control[]
+                { picOdd, lblOdd, picEven, lblEven });
         }
 
         private void LoadClasses()
@@ -58,6 +87,14 @@ namespace testing
             if (drv == null) return;
             _selectedClassId = Convert.ToInt32(drv["ID_класса"]);
             BuildScheduleGrid();
+        }
+
+        private void radioWeekView_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioWeekViewOdd.Checked)       _weekView = 1;
+            else if (radioWeekViewEven.Checked) _weekView = 2;
+            else                                _weekView = 0;
+            FillGridFromDb();
         }
 
         private void BuildScheduleGrid()
@@ -142,12 +179,15 @@ namespace testing
 
             try
             {
+                string weekCond = _weekView == 1 ? " AND Чётность_недели IN (0, 1)"
+                                : _weekView == 2 ? " AND Чётность_недели IN (0, 2)"
+                                : "";
                 DataTable dt = DbHelper.Query(
                     "SELECT ID_расписания, ID_нагрузки, ID_кабинета, Кабинет, " +
                     "ID_дня_недели, Номер_урока, ID_учителя, ФИО_учителя, " +
                     "Предмет, ID_предмета_со_сложностью, Сложность, " +
                     "Чётность_недели, Пометка_недели, Подгруппа, Пометка_подгруппы " +
-                    "FROM vw_Schedule WHERE ID_класса = @cid",
+                    "FROM vw_Schedule WHERE ID_класса = @cid" + weekCond,
                     p => p.AddWithValue("@cid", _selectedClassId));
 
                 foreach (DataRow row in dt.Rows)
@@ -164,9 +204,9 @@ namespace testing
                         cell.Tag = new List<DataRow>();
                     ((List<DataRow>)cell.Tag).Add(row);
 
-                    cell.Value           = BuildCellText((List<DataRow>)cell.Tag);
+                    cell.Value           = BuildCellText((List<DataRow>)cell.Tag, _weekView);
                     cell.Style.ForeColor = Color.Black;
-                    cell.Style.BackColor = Color.White;
+                    cell.Style.BackColor = GetCellWeekColor((List<DataRow>)cell.Tag);
 
                     _diffBySlot[lesson - 1, day - 1] += diff;
                 }
@@ -367,7 +407,7 @@ namespace testing
             labelInfoRoomVal.Text    = row["Кабинет"]?.ToString()     ?? "—";
         }
 
-        private static string BuildCellText(List<DataRow> entries)
+        private static string BuildCellText(List<DataRow> entries, int weekView = 0)
         {
             if (entries == null || entries.Count == 0) return "+";
             var sb = new System.Text.StringBuilder();
@@ -376,10 +416,31 @@ namespace testing
                 if (sb.Length > 0) sb.Append("\n──\n");
                 string week = row["Пометка_недели"]?.ToString() ?? "";
                 string sub  = row["Пометка_подгруппы"]?.ToString() ?? "";
-                string pfx  = (week + sub).Length > 0 ? (week + sub + " ") : "";
+                // При фильтре по неделе пометку недели не показываем (она очевидна)
+                string pfx  = weekView != 0
+                    ? (sub.Length > 0 ? sub + " " : "")
+                    : ((week + sub).Length > 0 ? (week + sub + " ") : "");
                 sb.AppendFormat("{0}{1}\n{2}/{3}", pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
             }
             return sb.ToString();
+        }
+
+        private static Color GetCellWeekColor(List<DataRow> entries)
+        {
+            if (entries == null || entries.Count == 0) return Color.White;
+            bool hasOdd  = false;
+            bool hasEven = false;
+            foreach (var row in entries)
+            {
+                int p = Convert.ToInt32(row["Чётность_недели"]);
+                if (p == 0) return Color.White; // хотя бы один «каждую неделю» — белый
+                if (p == 1) hasOdd  = true;
+                if (p == 2) hasEven = true;
+            }
+            if (hasOdd && hasEven) return Color.White; // оба типа — белый (смешанный)
+            if (hasOdd)  return ColorOddWeek;
+            if (hasEven) return ColorEvenWeek;
+            return Color.White;
         }
 
         private void dataGrid_CellClick(object sender, DataGridViewCellEventArgs e)
