@@ -29,6 +29,16 @@ namespace testing
         }
         private static int GetInt(Dictionary<string, object> p, string name)
             => Convert.ToInt32(Get(p, name));
+        private static int GetIntOrDefault(Dictionary<string, object> p, string name, int def = 0)
+        {
+            var v = Get(p, name);
+            return (v == null || v == DBNull.Value) ? def : Convert.ToInt32(v);
+        }
+        private static int? GetNullableInt(Dictionary<string, object> p, string name)
+        {
+            var v = Get(p, name);
+            return (v == null || v == DBNull.Value) ? (int?)null : Convert.ToInt32(v);
+        }
         private static double GetDouble(Dictionary<string, object> p, string name)
             => Convert.ToDouble(Get(p, name));
 
@@ -82,14 +92,15 @@ namespace testing
         // ================================================================
         private static DataTable AddLesson(Dictionary<string, object> p, SqliteConnection c)
         {
-            int workloadId = GetInt(p, "ID_нагрузки");
+            int workloadId  = GetInt(p, "ID_нагрузки");
             int classroomId = GetInt(p, "ID_кабинета");
-            int day = GetInt(p, "ID_дня_недели");
-            int lesson = GetInt(p, "ID_номера_урока");
+            int day         = GetInt(p, "ID_дня_недели");
+            int lesson      = GetInt(p, "ID_номера_урока");
+            int week        = GetIntOrDefault(p, "Чётность_недели", 0); // 0=каждую, 1=нечётные, 2=чётные
 
             using (var tx = c.BeginTransaction())
             {
-                // Проверка занятости учителя в этот слот
+                // Проверка занятости учителя с учётом чётности недели
                 bool teacherBusy = ScalarInt(c, tx,
                     @"SELECT COUNT(*)
                       FROM Schedule s
@@ -97,16 +108,17 @@ namespace testing
                       JOIN Workload w2 ON w2.ID_нагрузки = $wl
                       WHERE s.ID_дня_недели   = $day
                         AND s.ID_номера_урока = $les
-                        AND w.ID_учителя      = w2.ID_учителя",
-                    ("$wl", workloadId), ("$day", day), ("$les", lesson)) > 0;
+                        AND w.ID_учителя      = w2.ID_учителя
+                        AND (s.Чётность_недели = 0 OR $week = 0 OR s.Чётность_недели = $week)",
+                    ("$wl", workloadId), ("$day", day), ("$les", lesson), ("$week", week)) > 0;
 
                 if (teacherBusy)
                     throw new Exception("Учитель уже ведёт другой урок в это время!");
 
                 Exec(c, tx,
-                    @"INSERT INTO Schedule (ID_нагрузки, ID_кабинета, ID_дня_недели, ID_номера_урока)
-                      VALUES ($wl, $room, $day, $les)",
-                    ("$wl", workloadId), ("$room", classroomId), ("$day", day), ("$les", lesson));
+                    @"INSERT INTO Schedule (ID_нагрузки, ID_кабинета, ID_дня_недели, ID_номера_урока, Чётность_недели)
+                      VALUES ($wl, $room, $day, $les, $week)",
+                    ("$wl", workloadId), ("$room", classroomId), ("$day", day), ("$les", lesson), ("$week", week));
 
                 int newId = ScalarInt(c, tx, "SELECT last_insert_rowid()");
                 tx.Commit();
@@ -123,13 +135,13 @@ namespace testing
         // ================================================================
         private static int UpdateLesson(Dictionary<string, object> p, SqliteConnection c)
         {
-            int schedId = GetInt(p, "ID_расписания");
-            int workloadId = GetInt(p, "ID_нагрузки");
+            int schedId     = GetInt(p, "ID_расписания");
+            int workloadId  = GetInt(p, "ID_нагрузки");
             int classroomId = GetInt(p, "ID_кабинета");
+            int week        = GetIntOrDefault(p, "Чётность_недели", 0);
 
             using (var tx = c.BeginTransaction())
             {
-                // День и номер урока берём из существующей записи
                 int day = ScalarInt(c, tx,
                     "SELECT ID_дня_недели FROM Schedule WHERE ID_расписания = $id",
                     ("$id", schedId));
@@ -137,7 +149,7 @@ namespace testing
                     "SELECT ID_номера_урока FROM Schedule WHERE ID_расписания = $id",
                     ("$id", schedId));
 
-                // Проверка занятости учителя (исключая текущую запись)
+                // Проверка занятости учителя с учётом чётности (исключая текущую запись)
                 bool teacherBusy = ScalarInt(c, tx,
                     @"SELECT COUNT(*)
                       FROM Schedule s
@@ -146,17 +158,20 @@ namespace testing
                       WHERE s.ID_дня_недели   = $day
                         AND s.ID_номера_урока = $les
                         AND w.ID_учителя      = w2.ID_учителя
-                        AND s.ID_расписания  <> $id",
-                    ("$wl", workloadId), ("$day", day), ("$les", lesson), ("$id", schedId)) > 0;
+                        AND s.ID_расписания  <> $id
+                        AND (s.Чётность_недели = 0 OR $week = 0 OR s.Чётность_недели = $week)",
+                    ("$wl", workloadId), ("$day", day), ("$les", lesson),
+                    ("$id", schedId), ("$week", week)) > 0;
 
                 if (teacherBusy)
                     throw new Exception("Учитель уже ведёт другой урок в это время!");
 
                 int n = Exec(c, tx,
                     @"UPDATE Schedule
-                      SET ID_нагрузки = $wl, ID_кабинета = $room
+                      SET ID_нагрузки = $wl, ID_кабинета = $room, Чётность_недели = $week
                       WHERE ID_расписания = $id",
-                    ("$wl", workloadId), ("$room", classroomId), ("$id", schedId));
+                    ("$wl", workloadId), ("$room", classroomId),
+                    ("$id", schedId), ("$week", week));
                 tx.Commit();
                 return n;
             }
@@ -182,27 +197,32 @@ namespace testing
         // ================================================================
         private static DataTable AddWorkload(Dictionary<string, object> p, SqliteConnection c)
         {
-            int teacherId = GetInt(p, "ID_учителя");
-            int classId = GetInt(p, "ID_класса");
-            int subjParId = GetInt(p, "ID_предмета_параллели");
-            int hours = Convert.ToInt32(Get(p, "Количество_часов_в_неделю"));
+            int   teacherId = GetInt(p, "ID_учителя");
+            int   classId   = GetInt(p, "ID_класса");
+            int   subjParId = GetInt(p, "ID_предмета_параллели");
+            int   hours     = Convert.ToInt32(Get(p, "Количество_часов_в_неделю"));
+            int?  subgroup  = GetNullableInt(p, "Подгруппа"); // null=весь класс, 1/2=подгруппа
+            object sgParam  = (object)subgroup ?? DBNull.Value;
 
             using (var tx = c.BeginTransaction())
             {
+                // Нельзя иметь две записи нагрузки для одной и той же комбинации класс+предмет+подгруппа
                 bool dup = ScalarInt(c, tx,
                     @"SELECT COUNT(*) FROM Workload
-                      WHERE ID_учителя = $t AND ID_класса = $cl
-                        AND ID_предмета_параллели = $sp",
-                    ("$t", teacherId), ("$cl", classId), ("$sp", subjParId)) > 0;
+                      WHERE ID_класса = $cl
+                        AND ID_предмета_параллели = $sp
+                        AND Подгруппа IS $sg",
+                    ("$cl", classId), ("$sp", subjParId), ("$sg", sgParam)) > 0;
 
                 if (dup)
                     throw new Exception("Такая нагрузка уже существует!");
 
                 Exec(c, tx,
                     @"INSERT INTO Workload
-                        (ID_учителя, ID_класса, ID_предмета_параллели, Количество_часов_в_неделю)
-                      VALUES ($t, $cl, $sp, $h)",
-                    ("$t", teacherId), ("$cl", classId), ("$sp", subjParId), ("$h", hours));
+                        (ID_учителя, ID_класса, ID_предмета_параллели, Количество_часов_в_неделю, Подгруппа)
+                      VALUES ($t, $cl, $sp, $h, $sg)",
+                    ("$t", teacherId), ("$cl", classId), ("$sp", subjParId),
+                    ("$h", hours), ("$sg", sgParam));
 
                 int newId = ScalarInt(c, tx, "SELECT last_insert_rowid()");
                 tx.Commit();

@@ -62,33 +62,241 @@ namespace testing
 
         /// <summary>
         /// Инициализация базы данных при старте приложения.
-        /// Если файла базы нет — создаёт его и выполняет встроенные скрипты:
-        /// сначала схему, затем данные. Вызывается один раз в Program.Main().
+        /// Если файла базы нет — создаёт его из встроенных скриптов.
+        /// Если файл уже есть — запускает миграцию для добавления новых колонок.
         /// </summary>
         public static void EnsureDatabase()
         {
             if (File.Exists(DbPath))
-                return; // база уже создана — ничего не делаем
+            {
+                MigrateIfNeeded();
+                return;
+            }
 
             try
             {
                 using (var c = new SqliteConnection(ConnStr))
                 {
                     c.Open();
-                    // 1) Структура: таблицы, представления, триггеры, справочники
                     RunScript(c, "schema_sqlite.sql");
-                    // 2) Данные: учителя, предметы, кабинеты, нагрузка, расписание
                     RunScript(c, "data_sqlite.sql");
                 }
             }
             catch (Exception ex)
             {
-                // Если что-то пошло не так — удаляем недоделанный файл,
-                // чтобы при следующем запуске попытка повторилась с нуля.
                 try { if (File.Exists(DbPath)) File.Delete(DbPath); } catch { }
                 throw new Exception(
                     "Не удалось создать базу данных при первом запуске.\n" + ex.Message, ex);
             }
+        }
+
+        /// <summary>
+        /// Применяет инкрементальные миграции к существующей базе.
+        /// Безопасен для повторного запуска: проверяет наличие колонок перед изменениями.
+        /// </summary>
+        public static void MigrateIfNeeded()
+        {
+            try
+            {
+                using (var c = new SqliteConnection(ConnStr))
+                {
+                    c.Open();
+                    using (var pragma = c.CreateCommand())
+                    {
+                        pragma.CommandText = "PRAGMA foreign_keys = ON;";
+                        pragma.ExecuteNonQuery();
+                    }
+
+                    bool hasSubgroup    = ColumnExists(c, "Workload",  "Подгруппа");
+                    bool hasWeekParity  = ColumnExists(c, "Schedule",  "Чётность_недели");
+
+                    if (hasSubgroup && hasWeekParity)
+                        return; // база уже актуальна
+
+                    // Миграция 1: добавляем Подгруппа в Workload
+                    if (!hasSubgroup)
+                        ExecMigrationSql(c,
+                            "ALTER TABLE Workload ADD COLUMN Подгруппа INTEGER DEFAULT NULL " +
+                            "CHECK (Подгруппа IS NULL OR Подгруппа IN (1, 2))");
+
+                    // Миграция 2: пересоздаём Schedule с колонкой Чётность_недели
+                    // и без устаревшего UNIQUE-ограничения на кабинет
+                    if (!hasWeekParity)
+                    {
+                        ExecMigrationSql(c, @"
+DROP TABLE IF EXISTS Schedule_v2;
+CREATE TABLE Schedule_v2 (
+    ID_расписания   INTEGER PRIMARY KEY AUTOINCREMENT,
+    ID_нагрузки     INTEGER NOT NULL REFERENCES Workload(ID_нагрузки),
+    ID_кабинета     INTEGER NOT NULL REFERENCES Classrooms(ID_кабинета),
+    ID_дня_недели   INTEGER NOT NULL REFERENCES DayOfWeek(ID_дня_недели),
+    ID_номера_урока INTEGER NOT NULL REFERENCES LessonNumber(ID_номера_урока),
+    Чётность_недели INTEGER NOT NULL DEFAULT 0 CHECK (Чётность_недели IN (0, 1, 2))
+);
+INSERT INTO Schedule_v2
+    SELECT ID_расписания, ID_нагрузки, ID_кабинета, ID_дня_недели, ID_номера_урока, 0
+    FROM Schedule;
+DROP TABLE Schedule;
+ALTER TABLE Schedule_v2 RENAME TO Schedule;");
+                    }
+
+                    // Пересоздаём представления и триггер с новой логикой
+                    ExecMigrationSql(c, GetViewsAndTriggerSql());
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Ошибка миграции базы данных.\n" + ex.Message, ex);
+            }
+        }
+
+        /// <summary>Проверяет, существует ли колонка в таблице.</summary>
+        private static bool ColumnExists(SqliteConnection c, string table, string column)
+        {
+            using (var cmd = c.CreateCommand())
+            {
+                cmd.CommandText = "PRAGMA table_info(" + table + ")";
+                using (var r = cmd.ExecuteReader())
+                    while (r.Read())
+                        if (r["name"].ToString() == column) return true;
+                return false;
+            }
+        }
+
+        /// <summary>Выполняет SQL-скрипт миграции (может содержать несколько команд).</summary>
+        private static void ExecMigrationSql(SqliteConnection c, string sql)
+        {
+            using (var cmd = c.CreateCommand())
+            {
+                cmd.CommandText = sql;
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>
+        /// SQL для пересоздания представлений vw_Schedule, vw_Workload, vw_Conflicts
+        /// и триггера trg_PreventDoubleBooking с учётом новой логики чётности недели.
+        /// </summary>
+        private static string GetViewsAndTriggerSql()
+        {
+            return @"
+DROP VIEW IF EXISTS vw_Conflicts;
+DROP VIEW IF EXISTS vw_Workload;
+DROP VIEW IF EXISTS vw_Schedule;
+DROP TRIGGER IF EXISTS trg_PreventDoubleBooking;
+
+CREATE TRIGGER trg_PreventDoubleBooking
+BEFORE INSERT ON Schedule
+FOR EACH ROW
+WHEN EXISTS (
+    SELECT 1 FROM Schedule s
+    WHERE s.ID_кабинета     = NEW.ID_кабинета
+      AND s.ID_дня_недели   = NEW.ID_дня_недели
+      AND s.ID_номера_урока = NEW.ID_номера_урока
+      AND (s.Чётность_недели = 0 OR NEW.Чётность_недели = 0 OR s.Чётность_недели = NEW.Чётность_недели)
+)
+BEGIN
+    SELECT RAISE(ABORT, 'Кабинет уже занят в это время!');
+END;
+
+CREATE VIEW vw_Schedule AS
+SELECT
+    s.ID_расписания,
+    s.ID_нагрузки,
+    s.ID_кабинета,
+    cr.Номер                          AS Кабинет,
+    ct.Тип_кабинета                   AS Тип_кабинета,
+    d.ID_дня_недели,
+    d.День_недели,
+    ln.ID_номера_урока,
+    ln.Номер_урока,
+    w.ID_учителя,
+    t.Фамилия || ' ' || t.Имя || ' ' || t.Отчество AS ФИО_учителя,
+    t.Фамилия, t.Имя, t.Отчество,
+    w.ID_класса,
+    CAST(pc.Параллель AS TEXT) || lc.Буква AS Класс,
+    pc.Параллель, lc.Буква,
+    sbp.ID_предмета_со_сложностью,
+    sub.Название                      AS Предмет,
+    diff.Сложность,
+    s.Чётность_недели,
+    CASE s.Чётность_недели WHEN 0 THEN '' WHEN 1 THEN '[Нч]' ELSE '[Чт]' END AS Пометка_недели,
+    w.Подгруппа,
+    CASE WHEN w.Подгруппа IS NULL THEN '' WHEN w.Подгруппа = 1 THEN '[П1]' ELSE '[П2]' END AS Пометка_подгруппы
+FROM Schedule s
+JOIN Workload w            ON s.ID_нагрузки           = w.ID_нагрузки
+JOIN Teachers t            ON w.ID_учителя            = t.ID_учителя
+JOIN Classes cl            ON w.ID_класса             = cl.ID_класса
+JOIN ParallelClass pc      ON cl.ID_параллели_класса  = pc.ID_параллели_класса
+JOIN LetterClass lc        ON cl.ID_буквы_класса      = lc.ID_буквы_класса
+JOIN SubjectByParallel sbp ON w.ID_предмета_параллели = sbp.ID_предмета_со_сложностью
+JOIN Subjects sub          ON sbp.ID_предмета         = sub.ID_предмета
+JOIN Difficulty diff       ON sbp.ID_сложности        = diff.ID_сложности
+JOIN Classrooms cr         ON s.ID_кабинета           = cr.ID_кабинета
+JOIN ClassroomTypes ct     ON cr.ID_типа_кабинета     = ct.ID_типа_кабинета
+JOIN DayOfWeek d           ON s.ID_дня_недели         = d.ID_дня_недели
+JOIN LessonNumber ln       ON s.ID_номера_урока       = ln.ID_номера_урока;
+
+CREATE VIEW vw_Workload AS
+SELECT
+    w.ID_нагрузки, w.ID_учителя,
+    t.Фамилия || ' ' || t.Имя || ' ' || t.Отчество AS ФИО_учителя,
+    w.ID_класса,
+    CAST(pc.Параллель AS TEXT) || lc.Буква AS Класс,
+    pc.Параллель,
+    sub.Название                      AS Предмет,
+    diff.Сложность,
+    w.Количество_часов_в_неделю,
+    w.Подгруппа,
+    CASE WHEN w.Подгруппа IS NULL THEN 'Весь класс'
+         WHEN w.Подгруппа = 1    THEN 'Подгруппа 1'
+         ELSE 'Подгруппа 2' END AS Тип_нагрузки,
+    (SELECT COUNT(*) FROM Schedule s WHERE s.ID_нагрузки = w.ID_нагрузки) AS Поставлено_уроков
+FROM Workload w
+JOIN Teachers t            ON w.ID_учителя            = t.ID_учителя
+JOIN Classes cl            ON w.ID_класса             = cl.ID_класса
+JOIN ParallelClass pc      ON cl.ID_параллели_класса  = pc.ID_параллели_класса
+JOIN LetterClass lc        ON cl.ID_буквы_класса      = lc.ID_буквы_класса
+JOIN SubjectByParallel sbp ON w.ID_предмета_параллели = sbp.ID_предмета_со_сложностью
+JOIN Subjects sub          ON sbp.ID_предмета         = sub.ID_предмета
+JOIN Difficulty diff       ON sbp.ID_сложности        = diff.ID_сложности;
+
+CREATE VIEW vw_Conflicts AS
+SELECT DISTINCT
+    s1.ID_расписания                  AS ID_расписания_1,
+    s2.ID_расписания                  AS ID_расписания_2,
+    d.День_недели, d.ID_дня_недели,
+    ln.Номер_урока, ln.ID_номера_урока,
+    CAST(pc1.Параллель AS TEXT) || lc1.Буква AS Класс_1,
+    CAST(pc2.Параллель AS TEXT) || lc2.Буква AS Класс_2,
+    t1.Фамилия || ' ' || t1.Имя || ' ' || t1.Отчество AS Учитель_1,
+    t2.Фамилия || ' ' || t2.Имя || ' ' || t2.Отчество AS Учитель_2,
+    sub1.Название AS Предмет_1, sub2.Название AS Предмет_2,
+    CASE WHEN w1.ID_учителя = w2.ID_учителя THEN 'учитель' ELSE 'кабинет' END AS Тип_конфликта
+FROM Schedule s1
+JOIN Schedule s2           ON s1.ID_дня_недели   = s2.ID_дня_недели
+                          AND s1.ID_номера_урока = s2.ID_номера_урока
+                          AND s1.ID_расписания   < s2.ID_расписания
+                          AND (s1.Чётность_недели = 0 OR s2.Чётность_недели = 0
+                               OR s1.Чётность_недели = s2.Чётность_недели)
+JOIN Workload w1           ON s1.ID_нагрузки = w1.ID_нагрузки
+JOIN Workload w2           ON s2.ID_нагрузки = w2.ID_нагрузки
+JOIN Teachers t1           ON w1.ID_учителя  = t1.ID_учителя
+JOIN Teachers t2           ON w2.ID_учителя  = t2.ID_учителя
+JOIN Classes cl1           ON w1.ID_класса   = cl1.ID_класса
+JOIN Classes cl2           ON w2.ID_класса   = cl2.ID_класса
+JOIN ParallelClass pc1     ON cl1.ID_параллели_класса = pc1.ID_параллели_класса
+JOIN ParallelClass pc2     ON cl2.ID_параллели_класса = pc2.ID_параллели_класса
+JOIN LetterClass lc1       ON cl1.ID_буквы_класса     = lc1.ID_буквы_класса
+JOIN LetterClass lc2       ON cl2.ID_буквы_класса     = lc2.ID_буквы_класса
+JOIN SubjectByParallel sbp1 ON w1.ID_предмета_параллели = sbp1.ID_предмета_со_сложностью
+JOIN SubjectByParallel sbp2 ON w2.ID_предмета_параллели = sbp2.ID_предмета_со_сложностью
+JOIN Subjects sub1         ON sbp1.ID_предмета = sub1.ID_предмета
+JOIN Subjects sub2         ON sbp2.ID_предмета = sub2.ID_предмета
+JOIN DayOfWeek d           ON s1.ID_дня_недели   = d.ID_дня_недели
+JOIN LessonNumber ln       ON s1.ID_номера_урока = ln.ID_номера_урока
+WHERE w1.ID_учителя = w2.ID_учителя
+   OR s1.ID_кабинета = s2.ID_кабинета;";
         }
 
         /// <summary>
