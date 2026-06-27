@@ -90,13 +90,22 @@ namespace testing
             }
         }
 
+        private const string CreateScheduleSql = @"CREATE TABLE Schedule (
+    ID_расписания   INTEGER PRIMARY KEY AUTOINCREMENT,
+    ID_нагрузки     INTEGER NOT NULL REFERENCES Workload(ID_нагрузки),
+    ID_кабинета     INTEGER NOT NULL REFERENCES Classrooms(ID_кабинета),
+    ID_дня_недели   INTEGER NOT NULL REFERENCES DayOfWeek(ID_дня_недели),
+    ID_номера_урока INTEGER NOT NULL REFERENCES LessonNumber(ID_номера_урока),
+    Чётность_недели INTEGER NOT NULL DEFAULT 0 CHECK (Чётность_недели IN (0, 1, 2))
+)";
+
         /// <summary>
         /// Применяет инкрементальные миграции к существующей базе.
-        /// Порядок: FK выкл → снести все триггеры и вьюхи → мигрировать таблицы →
-        /// воссоздать триггеры и вьюхи → FK вкл.
-        /// Каждая DDL-команда выполняется отдельным SqliteCommand — это исключает
-        /// проблему с многострочными командами в старых версиях Microsoft.Data.Sqlite
-        /// и не даёт SQLite компилировать чужие триггеры в момент DROP TABLE.
+        /// Обрабатывает три состояния Schedule:
+        ///  (A) Schedule есть, Чётность_недели нет → стандартная миграция через RENAME
+        ///  (B) Schedule нет, Schedule_v2 есть → предыдущий запуск упал после DROP TABLE;
+        ///      просто переименовываем Schedule_v2 → Schedule
+        ///  (C) обеих нет → создаём Schedule с нуля (данные потеряны при прошлом сбое)
         /// </summary>
         public static void MigrateIfNeeded()
         {
@@ -106,18 +115,22 @@ namespace testing
                 {
                     c.Open();
 
-                    bool hasSubgroup   = ColumnExists(c, "Workload", "Подгруппа");
-                    bool hasWeekParity = ColumnExists(c, "Schedule", "Чётность_недели");
-                    if (hasSubgroup && hasWeekParity)
+                    bool hasSubgroup    = ColumnExists(c, "Workload",  "Подгруппа");
+                    bool hasWeekParity  = ColumnExists(c, "Schedule",  "Чётность_недели");
+                    bool scheduleExists = TableExists(c, "Schedule");
+                    bool v2Exists       = TableExists(c, "Schedule_v2");
+
+                    // Всё актуально и нет мусорной таблицы — ничего не делаем
+                    if (hasSubgroup && hasWeekParity && !v2Exists)
                         return;
 
-                    // PRAGMA нельзя ставить внутри транзакции — ставим до
+                    // PRAGMA не работает внутри транзакции — ставим до
                     One(c, "PRAGMA foreign_keys = OFF");
 
                     using (var tx = c.BeginTransaction())
                     {
-                        // 1. Снести все триггеры и представления, чтобы они не
-                        //    ссылались на таблицы во время DDL-операций ниже.
+                        // 1. Снести все триггеры и представления ПЕРВЫМИ, чтобы SQLite
+                        //    не пытался перекомпилировать их во время DDL на таблицах.
                         One(c, tx, "DROP TRIGGER IF EXISTS trg_PreventDoubleBooking");
                         One(c, tx, "DROP TRIGGER IF EXISTS trg_PreventClassroomDeletion");
                         One(c, tx, "DROP TRIGGER IF EXISTS trg_PreventTeacherDeletion");
@@ -132,11 +145,14 @@ namespace testing
                                 "ALTER TABLE Workload ADD COLUMN Подгруппа INTEGER DEFAULT NULL " +
                                 "CHECK (Подгруппа IS NULL OR Подгруппа IN (1, 2))");
 
-                        // 3. Schedule: пересоздать без UNIQUE-ограничения, с колонкой Чётность_недели
+                        // 3. Schedule: мигрируем с учётом возможных повреждений от прошлых запусков
                         if (!hasWeekParity)
                         {
-                            One(c, tx, "DROP TABLE IF EXISTS Schedule_v2");
-                            One(c, tx, @"CREATE TABLE Schedule_v2 (
+                            if (scheduleExists)
+                            {
+                                // Случай (A): обычная миграция — данные есть, копируем
+                                One(c, tx, "DROP TABLE IF EXISTS Schedule_v2");
+                                One(c, tx, @"CREATE TABLE Schedule_v2 (
     ID_расписания   INTEGER PRIMARY KEY AUTOINCREMENT,
     ID_нагрузки     INTEGER NOT NULL REFERENCES Workload(ID_нагрузки),
     ID_кабинета     INTEGER NOT NULL REFERENCES Classrooms(ID_кабинета),
@@ -144,12 +160,29 @@ namespace testing
     ID_номера_урока INTEGER NOT NULL REFERENCES LessonNumber(ID_номера_урока),
     Чётность_недели INTEGER NOT NULL DEFAULT 0 CHECK (Чётность_недели IN (0, 1, 2))
 )");
-                            One(c, tx,
-                                "INSERT INTO Schedule_v2 " +
-                                "SELECT ID_расписания, ID_нагрузки, ID_кабинета, " +
-                                "       ID_дня_недели, ID_номера_урока, 0 FROM Schedule");
-                            One(c, tx, "DROP TABLE Schedule");
-                            One(c, tx, "ALTER TABLE Schedule_v2 RENAME TO Schedule");
+                                One(c, tx,
+                                    "INSERT INTO Schedule_v2 " +
+                                    "SELECT ID_расписания, ID_нагрузки, ID_кабинета, " +
+                                    "       ID_дня_недели, ID_номера_урока, 0 FROM Schedule");
+                                One(c, tx, "DROP TABLE Schedule");
+                                One(c, tx, "ALTER TABLE Schedule_v2 RENAME TO Schedule");
+                            }
+                            else if (v2Exists)
+                            {
+                                // Случай (B): прошлый запуск упал между DROP TABLE Schedule
+                                // и RENAME — Schedule_v2 уже содержит данные с новой схемой
+                                One(c, tx, "ALTER TABLE Schedule_v2 RENAME TO Schedule");
+                            }
+                            else
+                            {
+                                // Случай (C): обеих таблиц нет — создаём пустое расписание
+                                One(c, tx, CreateScheduleSql);
+                            }
+                        }
+                        else if (v2Exists)
+                        {
+                            // Schedule актуальна, но Schedule_v2 осталась — убираем мусор
+                            One(c, tx, "DROP TABLE IF EXISTS Schedule_v2");
                         }
 
                         // 4. Воссоздать все триггеры с обновлённой логикой
@@ -285,6 +318,17 @@ WHERE w1.ID_учителя = w2.ID_учителя
             catch (Exception ex)
             {
                 throw new Exception("Ошибка миграции базы данных.\n" + ex.Message, ex);
+            }
+        }
+
+        /// <summary>Проверяет, существует ли таблица в базе данных.</summary>
+        private static bool TableExists(SqliteConnection c, string table)
+        {
+            using (var cmd = c.CreateCommand())
+            {
+                cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=@t";
+                cmd.Parameters.AddWithValue("@t", table);
+                return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
             }
         }
 
