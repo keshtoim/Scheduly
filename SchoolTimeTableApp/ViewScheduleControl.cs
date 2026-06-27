@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing;
 using System.Windows.Forms;
@@ -10,6 +11,9 @@ namespace testing
         private static readonly string[] DayNames =
             { "", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница" };
         private const int MAX_LESSONS = 8;
+
+        private static readonly Color ColorOddWeek  = Color.FromArgb(218, 234, 255);
+        private static readonly Color ColorEvenWeek = Color.FromArgb(235, 218, 255);
 
         public ViewScheduleControl() { InitializeComponent(); }
 
@@ -57,13 +61,12 @@ namespace testing
                 comboLevel.Items.Add("Основная школа (5–9)");
                 comboLevel.Items.Add("Средняя школа (10–11)");
                 comboLevel.SelectedIndex = 0;
+
+                comboWeekFilter.SelectedIndex = 0;
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка фильтров"); }
         }
 
-        /// <summary>
-        /// Возвращает SQL-условие для фильтра по ступени обучения.
-        /// </summary>
         private string GetLevelFilter()
         {
             switch (comboLevel.SelectedIndex)
@@ -74,6 +77,18 @@ namespace testing
                 default: return "";
             }
         }
+
+        private string GetWeekFilter()
+        {
+            switch (comboWeekFilter.SelectedIndex)
+            {
+                case 1: return " AND Чётность_недели IN (0, 1)";
+                case 2: return " AND Чётность_недели IN (0, 2)";
+                default: return "";
+            }
+        }
+
+        private int GetWeekMode() => comboWeekFilter.SelectedIndex; // 0=обе, 1=нч, 2=чт
 
         private void RebuildGrid()
         {
@@ -88,9 +103,21 @@ namespace testing
                 BuildAllClassesView(teacherFilter, dayFilter);
         }
 
+        // Словарь для отслеживания типа недели по ячейке (для цветовой раскраски)
+        // Ключ = (colName, rowIndex), значение = суммарная маска: 1=нч, 2=чт, 4=обе
+        private Dictionary<string, int> _cellWeekMask;
+
+        private void ApplyCellWeekColor(DataGridViewCell cell, int weekMask)
+        {
+            if (weekMask == 1)       cell.Style.BackColor = ColorOddWeek;
+            else if (weekMask == 2)  cell.Style.BackColor = ColorEvenWeek;
+            // 3 (нч+чт) или 4 (каждую) или другое — белый (не перекрываем)
+        }
+
         private void BuildSingleClassView(string classId, string teacherFilter, int dayFilter)
         {
             dataGrid.Rows.Clear(); dataGrid.Columns.Clear();
+            _cellWeekMask = new Dictionary<string, int>();
 
             var lc = new DataGridViewTextBoxColumn
                 { Name = "lesson", HeaderText = "Урок", Width = 60, ReadOnly = true };
@@ -115,6 +142,8 @@ namespace testing
             if (!string.IsNullOrEmpty(teacherFilter) && teacherFilter != "")
                 sql += " AND ID_учителя = " + teacherFilter;
             if (dayFilter > 0) sql += " AND ID_дня_недели = " + dayFilter;
+            sql += GetWeekFilter();
+            int weekMode = GetWeekMode();
 
             try
             {
@@ -128,14 +157,33 @@ namespace testing
                     string cn  = "day" + day;
                     if (!dataGrid.Columns.Contains(cn)) continue;
                     var cell  = dataGrid.Rows[lesson - 1].Cells[cn];
-                    string pfx = FormatEntryPrefix(row);
+                    string pfx = FormatEntryPrefix(row, weekMode);
                     string entry = string.Format("{0}{1}\n{2}\nКаб. {3}",
                         pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
                     string existing = cell.Value?.ToString() ?? "";
                     cell.Value = string.IsNullOrEmpty(existing) ? entry : existing + "\n──\n" + entry;
+
+                    // Накапливаем маску недели для ячейки
+                    string key = cn + "_" + (lesson - 1);
+                    int parity = Convert.ToInt32(row["Чётность_недели"]);
+                    int bit = parity == 1 ? 1 : parity == 2 ? 2 : 4;
+                    _cellWeekMask[key] = (_cellWeekMask.ContainsKey(key) ? _cellWeekMask[key] : 0) | bit;
+
                     if (IsConflict(conflicts, day, lesson))
                     { cell.Style.BackColor = Color.MistyRose; cell.Style.ForeColor = Color.DarkRed; }
                 }
+
+                // Цветовая раскраска по чётности (только если нет конфликта)
+                if (weekMode == 0)
+                    foreach (var kv in _cellWeekMask)
+                    {
+                        string[] parts = kv.Key.Split('_');
+                        string colName = parts[0]; int ri = int.Parse(parts[1]);
+                        if (!dataGrid.Columns.Contains(colName)) continue;
+                        var cell = dataGrid.Rows[ri].Cells[colName];
+                        if (cell.Style.ForeColor != Color.DarkRed)
+                            ApplyCellWeekColor(cell, kv.Value);
+                    }
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка данных"); }
         }
@@ -143,6 +191,7 @@ namespace testing
         private void BuildAllClassesView(string teacherFilter, int dayFilter)
         {
             dataGrid.Rows.Clear(); dataGrid.Columns.Clear();
+            _cellWeekMask = new Dictionary<string, int>();
 
             var cc = new DataGridViewTextBoxColumn
                 { Name = "class_name", HeaderText = "Класс", Width = 70, ReadOnly = true };
@@ -202,6 +251,8 @@ namespace testing
                     if (!string.IsNullOrEmpty(teacherFilter) && teacherFilter != "")
                         sql += " AND ID_учителя = " + teacherFilter;
                     if (dayFilter > 0) sql += " AND ID_дня_недели = " + dayFilter;
+                    sql += GetWeekFilter();
+                    int weekMode = GetWeekMode();
 
                     DataTable dt = DbHelper.Query(sql);
                     foreach (DataRow row in dt.Rows)
@@ -212,14 +263,32 @@ namespace testing
                         if (!dataGrid.Columns.Contains(cn)) continue;
                         int ri   = start + lesson - 1;
                         var cell = dataGrid.Rows[ri].Cells[cn];
-                        string pfx = FormatEntryPrefix(row);
+                        string pfx = FormatEntryPrefix(row, weekMode);
                         string entry = string.Format("{0}{1}\n{2}/{3}",
                             pfx, row["Предмет"], row["ФИО_учителя"], row["Кабинет"]);
                         string existing = cell.Value?.ToString() ?? "";
                         cell.Value = string.IsNullOrEmpty(existing) ? entry : existing + "\n──\n" + entry;
+
+                        int parity = Convert.ToInt32(row["Чётность_недели"]);
+                        int bit = parity == 1 ? 1 : parity == 2 ? 2 : 4;
+                        string key = cn + "_" + ri;
+                        _cellWeekMask[key] = (_cellWeekMask.ContainsKey(key) ? _cellWeekMask[key] : 0) | bit;
+
                         if (IsConflict(conflicts, day, lesson))
                         { cell.Style.BackColor = Color.MistyRose; cell.Style.ForeColor = Color.DarkRed; }
                     }
+
+                    if (weekMode == 0)
+                        foreach (var kv in _cellWeekMask)
+                        {
+                            string[] parts = kv.Key.Split('_');
+                            string colName = parts[0]; int ri2 = int.Parse(parts[1]);
+                            if (ri2 < start || ri2 >= start + MAX_LESSONS) continue;
+                            if (!dataGrid.Columns.Contains(colName)) continue;
+                            var cell = dataGrid.Rows[ri2].Cells[colName];
+                            if (cell.Style.ForeColor != Color.DarkRed)
+                                ApplyCellWeekColor(cell, kv.Value);
+                        }
 
                     for (int i = start; i < start + MAX_LESSONS; i++)
                     {
@@ -248,9 +317,10 @@ namespace testing
                 "SELECT DISTINCT ID_дня_недели, Номер_урока FROM vw_Conflicts");
         }
 
-        private static string FormatEntryPrefix(DataRow row)
+        private static string FormatEntryPrefix(DataRow row, int weekMode = 0)
         {
-            string week = row["Пометка_недели"]?.ToString() ?? "";
+            // При фильтре по конкретной неделе пометку [Нч]/[Чт] не показываем (и так понятно)
+            string week = weekMode == 0 ? (row["Пометка_недели"]?.ToString() ?? "") : "";
             string sub  = row["Пометка_подгруппы"]?.ToString() ?? "";
             string pfx  = (week + sub).Trim();
             return pfx.Length > 0 ? pfx + " " : "";
@@ -268,10 +338,11 @@ namespace testing
 
         private void buttonResetFilter_Click(object sender, EventArgs e)
         {
-            comboClass.SelectedIndex     = 0;
-            comboTeacher.SelectedIndex   = 0;
-            comboDayFilter.SelectedIndex = 0;
-            comboLevel.SelectedIndex     = 0;
+            comboClass.SelectedIndex      = 0;
+            comboTeacher.SelectedIndex    = 0;
+            comboDayFilter.SelectedIndex  = 0;
+            comboLevel.SelectedIndex      = 0;
+            comboWeekFilter.SelectedIndex = 0;
             textSearch.Clear();
             RebuildGrid();
         }

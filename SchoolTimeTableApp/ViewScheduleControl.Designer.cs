@@ -19,6 +19,10 @@ namespace testing
             this.comboTeacher      = new System.Windows.Forms.ComboBox();
             this.labelDay          = new System.Windows.Forms.Label();
             this.comboDayFilter    = new System.Windows.Forms.ComboBox();
+            this.labelLevel        = new System.Windows.Forms.Label();
+            this.comboLevel        = new System.Windows.Forms.ComboBox();
+            this.labelWeek         = new System.Windows.Forms.Label();
+            this.comboWeekFilter   = new System.Windows.Forms.ComboBox();
             this.buttonApplyFilter = new System.Windows.Forms.Button();
             this.buttonResetFilter = new System.Windows.Forms.Button();
             this.buttonExport      = new System.Windows.Forms.Button();
@@ -27,16 +31,14 @@ namespace testing
             this.textSearch        = new System.Windows.Forms.TextBox();
             this.buttonSearch      = new System.Windows.Forms.Button();
             this.labelSearchHint   = new System.Windows.Forms.Label();
-            this.labelLevel        = new System.Windows.Forms.Label();
-            this.comboLevel        = new System.Windows.Forms.ComboBox();
             this.dataGrid          = new System.Windows.Forms.DataGridView();
             this.panelFilters.SuspendLayout();
             this.panelSearch.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGrid)).BeginInit();
             this.SuspendLayout();
-            // 
-            // panelFilters — верхняя строка фильтров
-            // 
+            //
+            // panelFilters — двухстрочная панель фильтров
+            //
             this.panelFilters.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panelFilters.Controls.Add(this.labelClass);
             this.panelFilters.Controls.Add(this.comboClass);
@@ -46,13 +48,15 @@ namespace testing
             this.panelFilters.Controls.Add(this.comboDayFilter);
             this.panelFilters.Controls.Add(this.labelLevel);
             this.panelFilters.Controls.Add(this.comboLevel);
+            this.panelFilters.Controls.Add(this.labelWeek);
+            this.panelFilters.Controls.Add(this.comboWeekFilter);
             this.panelFilters.Controls.Add(this.buttonApplyFilter);
             this.panelFilters.Controls.Add(this.buttonResetFilter);
             this.panelFilters.Controls.Add(this.buttonExport);
             this.panelFilters.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelFilters.Location = new System.Drawing.Point(0, 0);
             this.panelFilters.Name = "panelFilters";
-            this.panelFilters.Size = new System.Drawing.Size(1192, 46);
+            this.panelFilters.Size = new System.Drawing.Size(1192, 72);
             this.panelFilters.TabIndex = 0;
             // labelClass
             this.labelClass.AutoSize = true;
@@ -93,59 +97,73 @@ namespace testing
             this.comboDayFilter.SelectedIndex = 0;
             this.comboDayFilter.Size = new System.Drawing.Size(115, 21);
             this.comboDayFilter.TabIndex = 5;
-            // labelLevel
+            // labelLevel (строка 1)
             this.labelLevel.AutoSize = true;
             this.labelLevel.Location = new System.Drawing.Point(618, 14);
             this.labelLevel.Name = "labelLevel"; this.labelLevel.TabIndex = 6;
             this.labelLevel.Text = "Ступень:";
-            // comboLevel
+            // comboLevel (строка 1)
             this.comboLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboLevel.FormattingEnabled = true;
             this.comboLevel.Location = new System.Drawing.Point(668, 10);
             this.comboLevel.Name = "comboLevel";
-            this.comboLevel.Size = new System.Drawing.Size(170, 21);
+            this.comboLevel.Size = new System.Drawing.Size(165, 21);
             this.comboLevel.TabIndex = 7;
-            // buttonApplyFilter
+            // labelWeek (строка 2)
+            this.labelWeek.AutoSize = true;
+            this.labelWeek.Location = new System.Drawing.Point(8, 52);
+            this.labelWeek.Name = "labelWeek"; this.labelWeek.TabIndex = 11;
+            this.labelWeek.Text = "Неделя:";
+            // comboWeekFilter (строка 2)
+            this.comboWeekFilter.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboWeekFilter.FormattingEnabled = true;
+            this.comboWeekFilter.Items.AddRange(new object[] { "Обе недели", "Нечётная", "Чётная" });
+            this.comboWeekFilter.Location = new System.Drawing.Point(68, 48);
+            this.comboWeekFilter.Name = "comboWeekFilter";
+            this.comboWeekFilter.SelectedIndex = 0;
+            this.comboWeekFilter.Size = new System.Drawing.Size(110, 21);
+            this.comboWeekFilter.TabIndex = 12;
+            // buttonApplyFilter (строка 2)
             this.buttonApplyFilter.BackColor = System.Drawing.Color.SteelBlue;
             this.buttonApplyFilter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonApplyFilter.ForeColor = System.Drawing.Color.White;
-            this.buttonApplyFilter.Location = new System.Drawing.Point(850, 9);
+            this.buttonApplyFilter.Location = new System.Drawing.Point(192, 45);
             this.buttonApplyFilter.Name = "buttonApplyFilter";
-            this.buttonApplyFilter.Size = new System.Drawing.Size(90, 26);
+            this.buttonApplyFilter.Size = new System.Drawing.Size(90, 24);
             this.buttonApplyFilter.TabIndex = 8;
             this.buttonApplyFilter.Text = "Применить";
             this.buttonApplyFilter.UseVisualStyleBackColor = false;
             this.buttonApplyFilter.Click += new System.EventHandler(this.buttonApplyFilter_Click);
-            // buttonResetFilter
+            // buttonResetFilter (строка 2)
             this.buttonResetFilter.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonResetFilter.Location = new System.Drawing.Point(948, 9);
+            this.buttonResetFilter.Location = new System.Drawing.Point(290, 45);
             this.buttonResetFilter.Name = "buttonResetFilter";
-            this.buttonResetFilter.Size = new System.Drawing.Size(80, 26);
+            this.buttonResetFilter.Size = new System.Drawing.Size(80, 24);
             this.buttonResetFilter.TabIndex = 9;
             this.buttonResetFilter.Text = "Сбросить";
             this.buttonResetFilter.UseVisualStyleBackColor = true;
             this.buttonResetFilter.Click += new System.EventHandler(this.buttonResetFilter_Click);
-            // buttonExport
+            // buttonExport (строка 2)
             this.buttonExport.BackColor = System.Drawing.Color.SeaGreen;
             this.buttonExport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.buttonExport.ForeColor = System.Drawing.Color.White;
-            this.buttonExport.Location = new System.Drawing.Point(1036, 9);
+            this.buttonExport.Location = new System.Drawing.Point(380, 45);
             this.buttonExport.Name = "buttonExport";
-            this.buttonExport.Size = new System.Drawing.Size(148, 26);
+            this.buttonExport.Size = new System.Drawing.Size(148, 24);
             this.buttonExport.TabIndex = 10;
             this.buttonExport.Text = "⬇ Экспорт в Excel";
             this.buttonExport.UseVisualStyleBackColor = false;
             this.buttonExport.Click += new System.EventHandler(this.buttonExport_Click);
-            // 
-            // panelSearch — вторая строка с поиском
-            // 
+            //
+            // panelSearch — строка поиска
+            //
             this.panelSearch.BackColor = System.Drawing.Color.FromArgb(240, 246, 255);
             this.panelSearch.Controls.Add(this.labelSearch);
             this.panelSearch.Controls.Add(this.textSearch);
             this.panelSearch.Controls.Add(this.buttonSearch);
             this.panelSearch.Controls.Add(this.labelSearchHint);
             this.panelSearch.Dock = System.Windows.Forms.DockStyle.Top;
-            this.panelSearch.Location = new System.Drawing.Point(0, 46);
+            this.panelSearch.Location = new System.Drawing.Point(0, 72);
             this.panelSearch.Name = "panelSearch";
             this.panelSearch.Size = new System.Drawing.Size(1192, 36);
             this.panelSearch.TabIndex = 1;
@@ -229,6 +247,8 @@ namespace testing
         private System.Windows.Forms.ComboBox   comboDayFilter;
         private System.Windows.Forms.Label      labelLevel;
         private System.Windows.Forms.ComboBox   comboLevel;
+        private System.Windows.Forms.Label      labelWeek;
+        private System.Windows.Forms.ComboBox   comboWeekFilter;
         private System.Windows.Forms.Button     buttonApplyFilter;
         private System.Windows.Forms.Button     buttonResetFilter;
         private System.Windows.Forms.Button     buttonExport;
