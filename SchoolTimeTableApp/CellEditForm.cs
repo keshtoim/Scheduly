@@ -365,7 +365,7 @@ namespace testing
         private void buttonAddClassroom_Click(object sender, EventArgs e)
         {
             DataTable dtTypes = DbHelper.Query(
-                "SELECT ID_типа_кабинета, Тип_кабинета FROM ClassroomTypes ORDER BY Тип_кабинета");
+                "SELECT ID_типа_кабинета, Тип_кабинета AS name FROM ClassroomTypes ORDER BY Тип_кабинета");
             if (dtTypes.Rows.Count == 0) { MessageBox.Show("Нет типов кабинетов."); return; }
 
             using (var dlg = new QuickAddClassroomForm(dtTypes))

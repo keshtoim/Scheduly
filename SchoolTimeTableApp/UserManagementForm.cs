@@ -5,7 +5,7 @@ using System.Windows.Forms;
 namespace testing
 {
     /// <summary>
-    /// Форма управления пользователями (только для Директора).
+    /// Форма управления пользователями (только для Заместителя директора).
     /// При выборе пользователя показывает его текущий пароль (скрытый),
     /// позволяет его отобразить и изменить, а также сменить роль.
     /// </summary>
@@ -36,7 +36,7 @@ namespace testing
                 // Загружаем с паролем чтобы показывать его при выборе
                 DataTable dt = DbHelper.Query(
                     "SELECT u.ID_пользователя, u.Логин, u.Отображаемое_имя, " +
-                    "r.Название AS Роль, u.Пароль, u.Активен " +
+                    "r.Роль, u.Пароль, u.Активен " +
                     "FROM Users u JOIN Roles r ON u.ID_роли = r.ID_роли " +
                     "ORDER BY r.ID_роли, u.Отображаемое_имя");
 
@@ -57,7 +57,7 @@ namespace testing
             try
             {
                 DataTable dt = AppUsers.GetAllRoles();
-                comboRole.DisplayMember = "Название";
+                comboRole.DisplayMember = "Роль";
                 comboRole.ValueMember   = "ID_роли";
                 comboRole.DataSource    = dt;
             }
@@ -90,7 +90,7 @@ namespace testing
             // Выбираем текущую роль в комbobox
             string roleName = row["Роль"].ToString();
             foreach (DataRowView drv in comboRole.Items)
-                if (drv["Название"].ToString() == roleName)
+                if (drv["Роль"].ToString() == roleName)
                 { comboRole.SelectedItem = drv; break; }
 
             groupPassword.Text = string.Format(
