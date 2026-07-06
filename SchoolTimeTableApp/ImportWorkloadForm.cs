@@ -84,6 +84,19 @@ namespace testing
         }
 
         // ── Парсинг и валидация ───────────────────────────────────────────
+        // ClosedXML возвращает "3.0" для числовых ячеек — нужна нормализация
+        private static string CellStr(IXLCell cell)
+        {
+            if (cell.DataType == XLDataType.Number)
+            {
+                double v = cell.GetValue<double>();
+                return (v == Math.Floor(v) && !double.IsInfinity(v))
+                    ? ((long)v).ToString()
+                    : v.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+            return cell.GetValue<string>().Trim();
+        }
+
         private void ParseFile(string path)
         {
             _rows.Clear();
@@ -93,12 +106,12 @@ namespace testing
                 int lastRow = ws.LastRowUsed()?.RowNumber() ?? 1;
                 for (int r = 2; r <= lastRow; r++)
                 {
-                    string cls  = ws.Cell(r, 1).GetValue<string>().Trim();
-                    string subj = ws.Cell(r, 2).GetValue<string>().Trim();
-                    string diff = ws.Cell(r, 3).GetValue<string>().Trim();
-                    string tchr = ws.Cell(r, 4).GetValue<string>().Trim();
-                    string hrs  = ws.Cell(r, 5).GetValue<string>().Trim();
-                    string sg   = ws.Cell(r, 6).GetValue<string>().Trim();
+                    string cls  = CellStr(ws.Cell(r, 1));
+                    string subj = CellStr(ws.Cell(r, 2));
+                    string diff = CellStr(ws.Cell(r, 3));
+                    string tchr = CellStr(ws.Cell(r, 4));
+                    string hrs  = CellStr(ws.Cell(r, 5));
+                    string sg   = CellStr(ws.Cell(r, 6));
 
                     if (string.IsNullOrEmpty(cls) && string.IsNullOrEmpty(subj)) continue;
 
@@ -127,10 +140,11 @@ namespace testing
             }
             row.ClassId = classId;
 
-            // 2. Сложность
-            if (!decimal.TryParse(row.RawDifficulty.Replace('.', ','),
+            // 2. Сложность — нормализуем к точке, парсим в InvariantCulture
+            string rawDiff = row.RawDifficulty.Trim().Replace(',', '.');
+            if (!decimal.TryParse(rawDiff,
                 System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.CurrentCulture,
+                System.Globalization.CultureInfo.InvariantCulture,
                 out decimal diff) || diff <= 0)
             {
                 Fail(row, $"Некорректная сложность «{row.RawDifficulty}»"); return;
@@ -139,7 +153,7 @@ namespace testing
             // 3. Предмет → SubjectByParallel
             if (!TryFindSubjectParallel(row.RawSubject, grade, diff, out int subjectParallelId))
             {
-                Fail(row, $"Предмет «{row.RawSubject}» для {grade} кл. (сл.{diff}) не найден"); return;
+                Fail(row, SubjectNotFoundReason(row.RawSubject, grade, diff)); return;
             }
             row.SubjectParallelId = subjectParallelId;
 
@@ -214,6 +228,27 @@ namespace testing
             if (id == null || id == DBNull.Value) return false;
             classId = Convert.ToInt32(id);
             return true;
+        }
+
+        // Возвращает расширенное сообщение об ошибке когда предмет есть, но не привязан к параллели
+        private string SubjectNotFoundReason(string name, int grade, decimal diff)
+        {
+            bool subjectExists = DbHelper.Exists(
+                "SELECT COUNT(*) FROM Subjects WHERE LOWER(Название) = LOWER(@n)",
+                p => p.AddWithValue("@n", name));
+            if (!subjectExists)
+                return $"Предмет «{name}» отсутствует в справочнике Предметы";
+
+            bool inParallel = DbHelper.Exists(
+                "SELECT COUNT(*) FROM SubjectByParallel sbp " +
+                "JOIN Subjects sub ON sbp.ID_предмета = sub.ID_предмета " +
+                "JOIN ParallelClass pc ON sbp.ID_параллели = pc.ID_параллели_класса " +
+                "WHERE LOWER(sub.Название) = LOWER(@n) AND pc.Параллель = @g",
+                p => { p.AddWithValue("@n", name); p.AddWithValue("@g", grade); });
+            if (!inParallel)
+                return $"Предмет «{name}» не добавлен в «Предметы/Парал.» для {grade} кл.";
+
+            return $"Предмет «{name}» есть для {grade} кл., но сложность {diff} не найдена";
         }
 
         private bool TryFindSubjectParallel(string name, int grade, decimal diff, out int id)
