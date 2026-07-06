@@ -7,6 +7,13 @@ namespace testing
 {
     public partial class WorkloadControl : UserControl
     {
+        // Full subject table: subject_id, grade, name_short, name_full
+        private DataTable _subjectsAll;
+        // Full class table: class_id, grade, name
+        private DataTable _classTable;
+        // Suppresses auto-logic during programmatic DataSource changes
+        private bool _suppressAutoLogic;
+
         public WorkloadControl() { InitializeComponent(); }
 
         public void LoadData()
@@ -40,32 +47,37 @@ namespace testing
         {
             try
             {
-                // Используем CONVERT вместо CAST для совместимости с collation
-                DataTable dtClass = DbHelper.Query(
-                    "SELECT ID_класса AS class_id, " +
-                    "CAST(pc.Параллель AS TEXT) || lc.Буква AS name " +
+                _suppressAutoLogic = true;
+
+                // ── Классы (с информацией о параллели для авто-фильтра предметов) ──
+                _classTable = DbHelper.Query(
+                    "SELECT cl.ID_класса AS class_id, " +
+                    "       pc.Параллель AS grade, " +
+                    "       CAST(pc.Параллель AS TEXT) || lc.Буква AS name " +
                     "FROM Classes cl " +
                     "JOIN ParallelClass pc ON cl.ID_параллели_класса = pc.ID_параллели_класса " +
-                    "JOIN LetterClass lc   ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
+                    "JOIN LetterClass   lc ON cl.ID_буквы_класса     = lc.ID_буквы_класса " +
                     "ORDER BY pc.Параллель, lc.Буква");
                 comboClass.DisplayMember = "name";
                 comboClass.ValueMember   = "class_id";
-                comboClass.DataSource    = dtClass;
+                comboClass.DataSource    = _classTable;
 
-                // Упрощённый список: только название предмета + параллель
-                DataTable dtSubject = DbHelper.Query(
+                // ── Предметы (две версии названия: короткая и с параллелью) ──
+                _subjectsAll = DbHelper.Query(
                     "SELECT sbp.ID_предмета_со_сложностью AS subject_id, " +
-                    "sub.Название || ' (' || CAST(pc.Параллель AS TEXT) || ' кл., сл.' || " +
-                    "CAST(d.Сложность AS TEXT) || ')' AS name " +
+                    "       pc.Параллель AS grade, " +
+                    "       sub.Название || ' (сл.' || CAST(d.Сложность AS TEXT) || ')' AS name_short, " +
+                    "       sub.Название || ' [' || CAST(pc.Параллель AS TEXT) || ' кл.] (сл.' || CAST(d.Сложность AS TEXT) || ')' AS name_full " +
                     "FROM SubjectByParallel sbp " +
-                    "JOIN Subjects sub      ON sbp.ID_предмета  = sub.ID_предмета " +
+                    "JOIN Subjects      sub ON sbp.ID_предмета  = sub.ID_предмета " +
                     "JOIN ParallelClass pc  ON sbp.ID_параллели = pc.ID_параллели_класса " +
-                    "JOIN Difficulty d      ON sbp.ID_сложности = d.ID_сложности " +
+                    "JOIN Difficulty    d   ON sbp.ID_сложности = d.ID_сложности " +
                     "ORDER BY sub.Название, pc.Параллель");
-                comboSubject.DisplayMember = "name";
+                comboSubject.DisplayMember = "name_full";
                 comboSubject.ValueMember   = "subject_id";
-                comboSubject.DataSource    = dtSubject;
+                comboSubject.DataSource    = _subjectsAll;
 
+                // ── Учителя ──
                 DataTable dtTeacher = DbHelper.Query(
                     "SELECT ID_учителя AS teacher_id, " +
                     "Фамилия || ' ' || Имя || ' ' || Отчество AS name " +
@@ -74,16 +86,118 @@ namespace testing
                 comboTeacher.ValueMember   = "teacher_id";
                 comboTeacher.DataSource    = dtTeacher;
 
-                // Подгруппа: 0=весь класс, 1=подгруппа 1, 2=подгруппа 2
                 comboSubgroup.Items.Clear();
                 comboSubgroup.Items.Add("Весь класс");
                 comboSubgroup.Items.Add("Подгруппа 1");
                 comboSubgroup.Items.Add("Подгруппа 2");
                 comboSubgroup.SelectedIndex = 0;
+
+                if (string.IsNullOrEmpty(textHours.Text))
+                    textHours.Text = "2";
+
+                _suppressAutoLogic = false;
             }
-            catch (Exception ex) { DbHelper.ShowError(ex, "Загрузка справочников"); }
+            catch (Exception ex)
+            {
+                _suppressAutoLogic = false;
+                DbHelper.ShowError(ex, "Загрузка справочников");
+            }
         }
 
+        // ── Авто-фильтр предметов при смене класса ────────────────────────
+        private void comboClass_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_suppressAutoLogic || _subjectsAll == null || _classTable == null) return;
+            if (comboClass.SelectedValue == null)
+            {
+                SetSubjectsDataSource(_subjectsAll, "name_full");
+                return;
+            }
+
+            int classId = Convert.ToInt32(comboClass.SelectedValue);
+            DataRow[] classRows = _classTable.Select("class_id = " + classId);
+            if (classRows.Length == 0) return;
+            int grade = Convert.ToInt32(classRows[0]["grade"]);
+
+            DataTable filtered = _subjectsAll.Clone();
+            foreach (DataRow row in _subjectsAll.Rows)
+                if (Convert.ToInt32(row["grade"]) == grade)
+                    filtered.ImportRow(row);
+
+            SetSubjectsDataSource(
+                filtered.Rows.Count > 0 ? filtered : _subjectsAll,
+                filtered.Rows.Count > 0 ? "name_short" : "name_full");
+        }
+
+        private void SetSubjectsDataSource(DataTable dt, string displayMember)
+        {
+            _suppressAutoLogic = true;
+            comboSubject.DataSource    = dt;
+            comboSubject.DisplayMember = displayMember;
+            comboSubject.ValueMember   = "subject_id";
+            _suppressAutoLogic = false;
+        }
+
+        // ── Авто-подстановка учителя при смене предмета ───────────────────
+        private void comboSubject_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_suppressAutoLogic || comboSubject.SelectedValue == null) return;
+            int subjectId = Convert.ToInt32(comboSubject.SelectedValue);
+            try
+            {
+                // Чаще всего используемый учитель для этого предмета
+                object teacherIdObj = DbHelper.Scalar(
+                    "SELECT ID_учителя FROM Workload " +
+                    "WHERE ID_предмета_параллели = @s " +
+                    "GROUP BY ID_учителя ORDER BY COUNT(*) DESC LIMIT 1",
+                    p => p.AddWithValue("@s", subjectId));
+                if (teacherIdObj != null && teacherIdObj != DBNull.Value)
+                    comboTeacher.SelectedValue = teacherIdObj;
+            }
+            catch { /* не критично */ }
+        }
+
+        // ── Enter в поле «Часов» → добавить ──────────────────────────────
+        private void textHours_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.SuppressKeyPress = true;
+                buttonAdd_Click(null, EventArgs.Empty);
+            }
+        }
+
+        // ── Двойной клик по строке → заполнить форму ─────────────────────
+        private void dataGrid_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+            if (!(dataGrid.DataSource is DataTable dt)) return;
+            int workloadId = Convert.ToInt32(dt.Rows[e.RowIndex]["ID_нагрузки"]);
+            try
+            {
+                DataTable details = DbHelper.Query(
+                    "SELECT ID_учителя, ID_класса, ID_предмета_параллели, " +
+                    "       Количество_часов_в_неделю, Подгруппа " +
+                    "FROM Workload WHERE ID_нагрузки = @id",
+                    p => p.AddWithValue("@id", workloadId));
+                if (details.Rows.Count == 0) return;
+                DataRow r = details.Rows[0];
+
+                // Сначала класс → auto-фильтр предметов по параллели
+                comboClass.SelectedValue = Convert.ToInt32(r["ID_класса"]);
+                // Затем предмет (из уже отфильтрованного списка)
+                comboSubject.SelectedValue = Convert.ToInt32(r["ID_предмета_параллели"]);
+                // Учитель — перезаписываем авто-подсказку фактическим значением
+                comboTeacher.SelectedValue = Convert.ToInt32(r["ID_учителя"]);
+                textHours.Text = r["Количество_часов_в_неделю"].ToString();
+                comboSubgroup.SelectedIndex = r["Подгруппа"] == DBNull.Value
+                    ? 0 : Convert.ToInt32(r["Подгруппа"]);
+                comboSubject.Focus();
+            }
+            catch (Exception ex) { DbHelper.ShowError(ex, "Предзаполнение формы"); }
+        }
+
+        // ── Добавление нагрузки ───────────────────────────────────────────
         private void buttonAdd_Click(object sender, EventArgs e)
         {
             if (comboClass.SelectedValue == null ||
@@ -101,7 +215,6 @@ namespace testing
                 return;
             }
 
-            // 0=весь класс → null, 1=П1 → 1, 2=П2 → 2
             object subgroupParam = comboSubgroup.SelectedIndex <= 0
                 ? (object)System.DBNull.Value
                 : (object)comboSubgroup.SelectedIndex;
@@ -110,19 +223,21 @@ namespace testing
             {
                 DbHelper.ExecProcNonQuery("sp_AddWorkload",
                     p => {
-                        p.AddWithValue("@ID_учителя",               comboTeacher.SelectedValue);
-                        p.AddWithValue("@ID_класса",                comboClass.SelectedValue);
-                        p.AddWithValue("@ID_предмета_параллели",    comboSubject.SelectedValue);
+                        p.AddWithValue("@ID_учителя",                comboTeacher.SelectedValue);
+                        p.AddWithValue("@ID_класса",                 comboClass.SelectedValue);
+                        p.AddWithValue("@ID_предмета_параллели",     comboSubject.SelectedValue);
                         p.AddWithValue("@Количество_часов_в_неделю", (byte)hours);
-                        p.AddWithValue("@Подгруппа",                subgroupParam);
+                        p.AddWithValue("@Подгруппа",                 subgroupParam);
                     });
-                textHours.Clear();
-                comboSubgroup.SelectedIndex = 0;
+                // Поля не сбрасываем: класс, учитель, часы, подгруппа остаются —
+                // пользователь меняет только предмет и сразу нажимает Enter снова
                 LoadWorkloadGrid();
+                comboSubject.Focus();
             }
             catch (Exception ex) { DbHelper.ShowError(ex, "Добавление нагрузки"); }
         }
 
+        // ── Удаление нагрузки ─────────────────────────────────────────────
         private void buttonDelete_Click(object sender, EventArgs e)
         {
             if (dataGrid.CurrentRow == null) return;
@@ -138,7 +253,6 @@ namespace testing
 
             try
             {
-                // Хранимая процедура атомарно удаляет нагрузку + уроки
                 DbHelper.ExecProcNonQuery("sp_DeleteWorkload",
                     p => p.AddWithValue("@ID_нагрузки", id));
                 LoadWorkloadGrid();
@@ -146,6 +260,7 @@ namespace testing
             catch (Exception ex) { DbHelper.ShowError(ex, "Удаление нагрузки"); }
         }
 
+        // ── Массовое заполнение ───────────────────────────────────────────
         private void buttonBulk_Click(object sender, EventArgs e)
         {
             using (var form = new BulkWorkloadForm())
@@ -153,6 +268,7 @@ namespace testing
             LoadWorkloadGrid();
         }
 
+        // ── Поиск ─────────────────────────────────────────────────────────
         private void textSearch_TextChanged(object sender, EventArgs e)
         {
             string query = textSearch.Text.Trim();

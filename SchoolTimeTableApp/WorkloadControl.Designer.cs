@@ -68,6 +68,7 @@ namespace testing
             this.comboClass.Name               = "comboClass";
             this.comboClass.Size               = new System.Drawing.Size(120, 21);
             this.comboClass.TabIndex           = 1;
+            this.comboClass.SelectedIndexChanged += new System.EventHandler(this.comboClass_SelectedIndexChanged);
             // labelSubject
             this.labelSubject.AutoSize = true;
             this.labelSubject.Location = new System.Drawing.Point(186, 14);
@@ -80,6 +81,7 @@ namespace testing
             this.comboSubject.Name              = "comboSubject";
             this.comboSubject.Size              = new System.Drawing.Size(180, 21);
             this.comboSubject.TabIndex          = 3;
+            this.comboSubject.SelectedIndexChanged += new System.EventHandler(this.comboSubject_SelectedIndexChanged);
             // labelTeacher
             this.labelTeacher.AutoSize = true;
             this.labelTeacher.Location = new System.Drawing.Point(438, 14);
@@ -102,6 +104,7 @@ namespace testing
             this.textHours.Name     = "textHours";
             this.textHours.Size     = new System.Drawing.Size(50, 20);
             this.textHours.TabIndex = 7;
+            this.textHours.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textHours_KeyDown);
             // buttonAdd
             this.buttonAdd.BackColor = System.Drawing.Color.SteelBlue;
             this.buttonAdd.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -182,6 +185,7 @@ namespace testing
             this.dataGrid.SelectionMode     = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.dataGrid.Size              = new System.Drawing.Size(1192, 568);
             this.dataGrid.TabIndex          = 2;
+            this.dataGrid.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGrid_CellDoubleClick);
             // WorkloadControl
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode       = System.Windows.Forms.AutoScaleMode.Font;
