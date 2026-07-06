@@ -14,6 +14,7 @@ namespace testing
         {
             this.panelAdd        = new System.Windows.Forms.Panel();
             this.buttonBulk      = new System.Windows.Forms.Button();
+            this.buttonImport    = new System.Windows.Forms.Button();
             this.labelClass      = new System.Windows.Forms.Label();
             this.comboClass      = new System.Windows.Forms.ComboBox();
             this.labelSubject    = new System.Windows.Forms.Label();
@@ -51,6 +52,7 @@ namespace testing
             this.panelAdd.Controls.Add(this.buttonAdd);
             this.panelAdd.Controls.Add(this.buttonDelete);
             this.panelAdd.Controls.Add(this.buttonBulk);
+            this.panelAdd.Controls.Add(this.buttonImport);
             this.panelAdd.Dock     = System.Windows.Forms.DockStyle.Top;
             this.panelAdd.Location = new System.Drawing.Point(0, 0);
             this.panelAdd.Name     = "panelAdd";
@@ -136,6 +138,16 @@ namespace testing
             this.buttonBulk.Text      = "Массовое заполнение...";
             this.buttonBulk.UseVisualStyleBackColor = true;
             this.buttonBulk.Click += new System.EventHandler(this.buttonBulk_Click);
+            // buttonImport — импорт из Excel
+            this.buttonImport.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonImport.ForeColor = System.Drawing.Color.DarkGreen;
+            this.buttonImport.Location  = new System.Drawing.Point(420, 47);
+            this.buttonImport.Name      = "buttonImport";
+            this.buttonImport.Size      = new System.Drawing.Size(180, 26);
+            this.buttonImport.TabIndex  = 12;
+            this.buttonImport.Text      = "📥  Импорт из Excel...";
+            this.buttonImport.UseVisualStyleBackColor = true;
+            this.buttonImport.Click += new System.EventHandler(this.buttonImport_Click);
             // labelSubgroup — вторая строка панели (Y=50)
             this.labelSubgroup.AutoSize = true;
             this.labelSubgroup.Location = new System.Drawing.Point(8, 53);
@@ -217,6 +229,7 @@ namespace testing
         private System.Windows.Forms.Button       buttonAdd;
         private System.Windows.Forms.Button       buttonDelete;
         private System.Windows.Forms.Button       buttonBulk;
+        private System.Windows.Forms.Button       buttonImport;
         private System.Windows.Forms.Panel        panelSearch;
         private System.Windows.Forms.Label        labelSearch;
         private System.Windows.Forms.TextBox      textSearch;

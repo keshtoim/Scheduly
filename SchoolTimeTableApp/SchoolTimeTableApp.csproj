@@ -223,6 +223,12 @@
     <Compile Include="BulkWorkloadForm.Designer.cs">
       <DependentUpon>BulkWorkloadForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ImportWorkloadForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ImportWorkloadForm.Designer.cs">
+      <DependentUpon>ImportWorkloadForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="ReferencesControl.cs">
       <SubType>UserControl</SubType>
     </Compile>

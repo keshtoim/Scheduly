@@ -268,6 +268,16 @@ namespace testing
             LoadWorkloadGrid();
         }
 
+        // ── Импорт из Excel ───────────────────────────────────────────────
+        private void buttonImport_Click(object sender, EventArgs e)
+        {
+            using (var form = new ImportWorkloadForm())
+            {
+                if (form.ShowDialog(this.ParentForm) == System.Windows.Forms.DialogResult.OK)
+                    LoadWorkloadGrid();
+            }
+        }
+
         // ── Поиск ─────────────────────────────────────────────────────────
         private void textSearch_TextChanged(object sender, EventArgs e)
         {
